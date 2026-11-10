@@ -19,6 +19,9 @@ const SUB = {
   manager: { login: "Log in to review and approve requests.", register: "Create your HR manager account." }
 };
 
+// Where each role goes after logging in (absolute paths, so they work from / and /hr/login)
+const DASHBOARD = { manager: "/manager/", staff: "/staff/" };
+
 function render() {
   const { role, mode } = form.dataset;
   document.body.dataset.role = role;
@@ -144,9 +147,9 @@ form.addEventListener("submit", async (e) => {
       const snap = await step(getDoc(doc(db, "users", cred.user.uid)), "checking your role (Firestore)");
       if (!snap.exists() || snap.data().role !== role) {
         await signOut(auth);
-       throw { message: role === "manager"
-  ? "This account is not an HR account. Use the Recruitment / Coordinator login."
-  : "This account is not a Recruitment / Coordinator account. Use the HR login at /hr/login." };
+        throw { message: role === "manager"
+          ? "This account is not an HR account. Use the Recruitment / Coordinator login."
+          : "This account is not a Recruitment / Coordinator account. Use the HR login at /hr/login." };
       }
       // Older accounts have no verifyRequired flag, so they can still log in
       if (snap.data().verifyRequired === true && !cred.user.emailVerified) {
@@ -158,7 +161,7 @@ form.addEventListener("submit", async (e) => {
       redirecting = true;
       setLoading(true, "Opening dashboard...");
       say("Logged in. Opening your dashboard...", "ok");
-      location.href = role === "manager" ? "manager/" : "staff/";
+      location.href = DASHBOARD[role] || "/";
     }
   } catch (err) {
     console.error(err);
