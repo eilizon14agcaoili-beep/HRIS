@@ -1,0 +1,6 @@
+{
+  "rewrites": [
+    { "source": "/hr/login",    "destination": "/hr.html" },
+    { "source": "/hr/register", "destination": "/hr.html" }
+  ]
+}

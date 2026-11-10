@@ -7,7 +7,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&family=Figtree:wght@400;600;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="shared/styles.css">
+<link rel="stylesheet" href="/shared/styles.css">
 <style>
   /* ============ Tokens (red + white default, green and blue optional) ============ */
   :root{
@@ -56,21 +56,19 @@
   /* ============ Layout ============ */
   .shell{position:relative;z-index:2;width:100%;max-width:1080px;display:grid;grid-template-columns:minmax(0,1fr) 440px;gap:64px;align-items:center}
 
-  /* ---- Left: brand + live checklist ---- */
+  /* ---- Left: brand + chibi ---- */
   .shell .side{position:relative!important;top:auto!important;left:auto!important;width:auto!important;min-height:0!important;padding:0!important;background:none!important;display:flex;flex-direction:column;gap:38px}
   .brand{display:inline-flex;align-items:center;gap:12px;font-family:var(--display);font-weight:800;font-size:1.5rem;letter-spacing:.06em;color:#fff}
   .mark{display:grid;place-items:center;width:42px;height:42px;border-radius:12px;background:#fff;color:var(--acc2);font-size:1rem;letter-spacing:0;box-shadow:0 8px 22px rgba(0,0,0,.3)}
   .headline{margin:0;max-width:11ch;font-family:var(--display);font-weight:800;font-size:clamp(2.4rem,5vw,4rem);line-height:1;letter-spacing:-.025em;text-wrap:balance}
   .lede{margin:16px 0 0;max-width:38ch;font-size:1.02rem;line-height:1.55;color:rgba(255,255,255,.78)}
 
-  /* ---- Chibi characters (change with the selected role) ---- */
+  /* ---- Chibi character ---- */
   .stage{position:relative;width:100%;max-width:440px;height:262px}
   .stage::after{content:"";position:absolute;left:6px;bottom:-4px;width:190px;height:26px;border-radius:50%;background:radial-gradient(ellipse,rgba(255,255,255,.28),transparent 70%)}
   .pal{position:absolute;left:0;bottom:0;display:flex;align-items:flex-end;gap:10px;opacity:0;pointer-events:none;transform:translateY(34px) scale(.5);transform-origin:50% 100%;transition:opacity .25s,transform .25s}
   .pal.on{opacity:1;transform:none;transition:opacity .3s,transform .6s cubic-bezier(.3,1.7,.45,1)}
   .pal svg{width:190px;height:228px;flex:none;overflow:visible}
-  .pal.hop svg{animation:hop .55s cubic-bezier(.3,1.6,.5,1)}
-  @keyframes hop{30%{transform:translateY(-22px) scale(.96,1.05)}60%{transform:translateY(0) scale(1.06,.94)}}
   .bubble{position:relative;align-self:center;margin-bottom:96px;max-width:190px;padding:11px 14px;border-radius:16px;background:#fff;color:var(--ink);font-size:.88rem;font-weight:700;line-height:1.35;box-shadow:0 12px 26px rgba(0,0,0,.28);opacity:0;transform:scale(.6);transform-origin:0 70%}
   .bubble::before{content:"";position:absolute;left:-7px;top:62%;width:14px;height:14px;background:#fff;border-radius:3px;transform:rotate(45deg)}
   .pal.on .bubble{animation:bubbleIn .5s .45s cubic-bezier(.3,1.6,.5,1) forwards}
@@ -87,12 +85,6 @@
   .chibi .tick{stroke-dasharray:16;stroke-dashoffset:16;animation:tick 4.2s infinite}
   .chibi .tick.t2{animation-delay:.5s}.chibi .tick.t3{animation-delay:1s}
   @keyframes tick{0%,8%{stroke-dashoffset:16}20%,78%{stroke-dashoffset:0}92%,100%{stroke-dashoffset:16}}
-  .chibi .stamp{transform-origin:128px 160px;animation:stamp 2.6s ease-in infinite}
-  @keyframes stamp{0%,32%{transform:translateY(0)}48%,60%{transform:translateY(26px)}80%,100%{transform:translateY(0)}}
-  .chibi .approved{opacity:0;transform-box:fill-box;transform-origin:center;animation:approved 2.6s infinite}
-  @keyframes approved{0%,46%{opacity:0;transform:scale(.3)}52%{opacity:1;transform:scale(1.25)}58%,88%{opacity:1;transform:scale(1)}100%{opacity:0;transform:scale(1)}}
-  .chibi .paper{transform-box:fill-box;transform-origin:center;animation:paperJolt 2.6s infinite}
-  @keyframes paperJolt{0%,46%,60%,100%{transform:rotate(6deg)}52%{transform:rotate(3deg) translateY(2px)}}
   .chibi .float{animation:floatUp 2.8s ease-out infinite;opacity:0}
   .chibi .float.f2{animation-delay:1.4s}
   @keyframes floatUp{0%{opacity:0;transform:translateY(8px)}20%{opacity:1}100%{opacity:0;transform:translateY(-34px)}}
@@ -113,17 +105,13 @@
   .card.shake{animation:shake .5s}
   @keyframes shake{0%,100%{transform:none}15%{transform:translateX(-9px)}30%{transform:translateX(8px)}45%{transform:translateX(-6px)}60%{transform:translateX(5px)}75%{transform:translateX(-3px)}}
 
-  /* role tabs: sliding pill */
+  /* tabs (role tabs are hidden on this page; mode tabs are driven by the Register / Log in link) */
   .seg{display:grid;grid-template-columns:1fr 1fr;gap:0;padding:4px;background:var(--tint);border:1px solid var(--line);border-radius:14px;position:relative}
-  .seg::before{content:"";position:absolute;top:4px;bottom:4px;left:4px;width:calc(50% - 4px);border-radius:10px;background:linear-gradient(120deg,var(--acc),var(--acc2));box-shadow:0 6px 16px var(--ring);transition:transform .35s cubic-bezier(.3,1.2,.4,1)}
-  .seg:has(button:nth-child(2)[aria-pressed="true"])::before{transform:translateX(100%)}
-  .seg button{position:relative;z-index:1;width:auto;margin:0;padding:10px 8px;border:0;border-radius:10px;background:transparent;color:var(--muted);font:inherit;font-weight:700;font-size:.82rem;line-height:1.25;cursor:pointer;transition:color .25s}
-  .seg button[aria-pressed="true"]{color:#fff}
-  .seg button:focus-visible{outline:2px solid var(--acc2);outline-offset:2px}
+  .seg button{position:relative;z-index:1;width:auto;margin:0;padding:10px 8px;border:0;border-radius:10px;background:transparent;color:var(--muted);font:inherit;font-weight:700;font-size:.82rem;line-height:1.25;cursor:pointer}
   #modeTabs{display:none}
 
   #formSub{display:none!important}
-  h1{margin:24px 0 2px;font-family:var(--display);font-weight:800;font-size:1.55rem;line-height:1.15;letter-spacing:-.015em;color:var(--ink);text-align:left}
+  h1{margin:6px 0 2px;font-family:var(--display);font-weight:800;font-size:1.55rem;line-height:1.15;letter-spacing:-.015em;color:var(--ink);text-align:left}
   .subline{margin:0 0 6px;font-size:.92rem;color:var(--muted)}
 
   /* floating-label fields */
@@ -240,7 +228,7 @@
     </div>
     <div class="stage" id="stage" aria-hidden="true">
 
-      <!-- Recruiter / Coordinator: headset, ID lanyard, clipboard, waving -->
+      <!-- Recruiter / Coordinator: headset, clipboard, waving -->
       <div class="pal on" id="palStaff">
         <svg class="chibi" viewBox="0 0 200 240" xmlns="http://www.w3.org/2000/svg">
           <ellipse class="shadow" cx="100" cy="229" rx="44" ry="7" fill="rgba(0,0,0,.3)"/>
@@ -302,73 +290,6 @@
         </svg>
         <div class="bubble">Let’s collect every 201 requirement!</div>
       </div>
-
-      <!-- HR: bun, glasses, blazer + tie, approving files with a stamp -->
-      <div class="pal" id="palHr">
-        <svg class="chibi" viewBox="0 0 200 240" xmlns="http://www.w3.org/2000/svg">
-          <ellipse class="shadow" cx="100" cy="229" rx="44" ry="7" fill="rgba(0,0,0,.3)"/>
-          <g class="bob">
-            <!-- legs + shoes -->
-            <rect x="80" y="192" width="15" height="28" rx="7" fill="#1d2338"/>
-            <rect x="105" y="192" width="15" height="28" rx="7" fill="#1d2338"/>
-            <ellipse cx="86" cy="223" rx="13" ry="6" fill="#2b2b3a"/>
-            <ellipse cx="114" cy="223" rx="13" ry="6" fill="#2b2b3a"/>
-            <!-- stamping arm (behind the body) -->
-            <g class="stamp">
-              <path d="M118 162 L150 138" stroke="#26304f" stroke-width="13" stroke-linecap="round" fill="none"/>
-              <circle cx="153" cy="136" r="8.5" fill="#ffd9b8"/>
-              <rect x="148" y="112" width="10" height="22" rx="4" fill="#8a5a3a"/>
-              <rect x="141" y="141" width="24" height="9" rx="2.5" fill="#6b3a22"/>
-              <rect x="143" y="148" width="20" height="4" rx="2" fill="var(--acc)"/>
-            </g>
-            <!-- paper being approved -->
-            <g class="paper">
-              <rect x="132" y="178" width="52" height="34" rx="3" fill="#fff" stroke="rgba(0,0,0,.12)"/>
-              <rect x="138" y="184" width="22" height="3" rx="1.5" fill="#e6dcdd"/>
-              <rect x="138" y="191" width="30" height="3" rx="1.5" fill="#e6dcdd"/>
-              <rect x="138" y="198" width="16" height="3" rx="1.5" fill="#e6dcdd"/>
-              <g class="approved">
-                <circle cx="171" cy="199" r="9" fill="#22c55e"/>
-                <path d="M166 199 L170 203 L177 195" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>
-              </g>
-            </g>
-            <!-- body: blazer, shirt, tie -->
-            <rect x="68" y="140" width="64" height="62" rx="24" fill="#26304f"/>
-            <path d="M90 142 L100 170 L110 142Z" fill="#fff"/>
-            <path d="M78 146 L94 146 L100 172 L88 190Z" fill="#1d2640"/>
-            <path d="M122 146 L106 146 L100 172 L112 190Z" fill="#1d2640"/>
-            <path d="M97 150 L103 150 L106 176 L100 186 L94 176Z" fill="var(--acc)"/>
-            <rect x="94" y="147" width="12" height="6" rx="2" fill="var(--acc2)"/>
-            <!-- left arm + folder -->
-            <path d="M74 156 Q58 168 66 186" stroke="#26304f" stroke-width="13" stroke-linecap="round" fill="none"/>
-            <g transform="rotate(-8 56 178)">
-              <rect x="34" y="158" width="42" height="40" rx="5" fill="var(--acc2)"/>
-              <path d="M34 164 Q34 158 40 158 L52 158 L57 164Z" fill="var(--acc)"/>
-              <rect x="42" y="172" width="26" height="3" rx="1.5" fill="rgba(255,255,255,.7)"/>
-              <rect x="42" y="179" width="18" height="3" rx="1.5" fill="rgba(255,255,255,.7)"/>
-            </g>
-            <circle cx="66" cy="188" r="7.5" fill="#ffd9b8"/>
-            <!-- head -->
-            <circle cx="100" cy="92" r="50" fill="#ffd9b8"/>
-            <circle cx="100" cy="38" r="15" fill="#2b1d1a"/>
-            <path d="M49 92 Q44 40 100 40 Q156 40 151 92 Q142 66 118 64 Q92 74 60 70 Q52 80 49 92Z" fill="#2b1d1a"/>
-            <path d="M78 54 Q100 44 124 56" fill="none" stroke="#45322d" stroke-width="3" stroke-linecap="round"/>
-            <!-- glasses + face -->
-            <circle cx="82" cy="97" r="14" fill="rgba(255,255,255,.28)" stroke="#2b2b3a" stroke-width="3"/>
-            <circle cx="118" cy="97" r="14" fill="rgba(255,255,255,.28)" stroke="#2b2b3a" stroke-width="3"/>
-            <path d="M96 96 L104 96" stroke="#2b2b3a" stroke-width="3" stroke-linecap="round"/>
-            <g class="eyes">
-              <ellipse cx="82" cy="98" rx="4.8" ry="6.8" fill="#2a1a1a"/>
-              <ellipse cx="118" cy="98" rx="4.8" ry="6.8" fill="#2a1a1a"/>
-              <circle cx="84" cy="95" r="1.8" fill="#fff"/><circle cx="120" cy="95" r="1.8" fill="#fff"/>
-            </g>
-            <circle cx="68" cy="114" r="6.5" fill="rgba(255,110,110,.42)"/>
-            <circle cx="132" cy="114" r="6.5" fill="rgba(255,110,110,.42)"/>
-            <path d="M92 116 Q100 124 108 116" fill="none" stroke="#b0463d" stroke-width="3" stroke-linecap="round"/>
-          </g>
-        </svg>
-        <div class="bubble">Ready to review and approve 201 files.</div>
-      </div>
     </div>
     <!-- kept for auth.js -->
     <div hidden><h2 id="sideTitle">Your 201 file, in one place.</h2><p id="sideText">Submit requests and upload your requirements.</p></div>
@@ -376,9 +297,9 @@
 
   <main>
   <form id="authForm" class="card" data-mode="login" data-role="staff">
-    <div class="seg" id="roleTabs" role="group" aria-label="Account type">
+    <!-- kept for auth.js; hidden (this page is Recruitment / Coordinator only) -->
+    <div class="seg" id="roleTabs" hidden>
       <button type="button" data-role="staff" aria-pressed="true">Recruitment / Coordinator</button>
-      <button type="button" data-role="manager" aria-pressed="false">HR</button>
     </div>
     <!-- kept for auth.js; hidden, the Register / Log in link below clicks it -->
     <div class="seg mode" id="modeTabs" role="group" aria-label="Action">
@@ -470,29 +391,26 @@
 </script>
 
 <script>
-/* Title + subtitle follow the selected tabs */
+/* Title + subtitle follow the selected mode (Recruitment / Coordinator only) */
 (function () {
   var h1 = document.getElementById("formTitle"), sub = document.getElementById("subLine");
-  var NAMES = { staff: "Recruitment / Coordinator", manager: "HR" };
+  var NAME = "Recruitment / Coordinator";
   var SUBS = {
-    staff: { login: "Submit employee 201 files and track what is still missing.", register: "Create your account to start submitting 201 files." },
-    manager: { login: "Review and approve complete 201 files.", register: "Create your HR account to review 201 files." }
+    login: "Submit employee 201 files and track what is still missing.",
+    register: "Create your account to start submitting 201 files."
   };
   function apply() {
-    var r = document.querySelector('#roleTabs [aria-pressed="true"]');
     var m = document.querySelector('#modeTabs [aria-pressed="true"]');
-    var role = (r && r.dataset.role) || "staff", mode = (m && m.dataset.mode) || "login";
-    var text = NAMES[role] + (mode === "login" ? " Log-in" : " Register");
+    var mode = (m && m.dataset.mode) || "login";
+    var text = NAME + (mode === "login" ? " Log-in" : " Register");
     if (h1.textContent !== text) h1.textContent = text;
-    if (sub.textContent !== SUBS[role][mode]) sub.textContent = SUBS[role][mode];
+    if (sub.textContent !== SUBS[mode]) sub.textContent = SUBS[mode];
   }
   new MutationObserver(apply).observe(document.querySelector("main"), {
     subtree: true, childList: true, characterData: true,
     attributes: true, attributeFilter: ["aria-pressed", "data-role", "data-mode"]
   });
-  ["roleTabs", "modeTabs"].forEach(function (id) {
-    document.getElementById(id).addEventListener("click", function () { setTimeout(apply, 0); });
-  });
+  document.getElementById("modeTabs").addEventListener("click", function () { setTimeout(apply, 0); });
   apply();
 })();
 </script>
@@ -663,35 +581,6 @@
 </script>
 
 <script>
-/* ===== Chibi: a little person for the selected role (Recruitment / HR) ===== */
-(function () {
-  var pals = { staff: document.getElementById("palStaff"), manager: document.getElementById("palHr") };
-  var tabs = document.getElementById("roleTabs"), current = "staff", first = true;
-
-  function role() {
-    var p = tabs.querySelector('[aria-pressed="true"]');
-    return (p && p.dataset.role) || "staff";
-  }
-  function show(r) {
-    if (!pals[r]) return;
-    Object.keys(pals).forEach(function (k) { pals[k].classList.toggle("on", k === r); });
-    var el = pals[r];
-    el.classList.remove("hop"); void el.offsetWidth; el.classList.add("hop");
-    setTimeout(function () { el.classList.remove("hop"); }, 650);
-  }
-  function sync() {
-    var r = role();
-    if (r === current && !first) return;
-    current = r; first = false;
-    show(r);
-  }
-  new MutationObserver(sync).observe(tabs, { subtree: true, attributes: true, attributeFilter: ["aria-pressed"] });
-  tabs.addEventListener("click", function () { setTimeout(sync, 0); });
-  sync();
-})();
-</script>
-
-<script>
 /* ===== Wallpaper: drifting 201 documents (ID cards, certificates, signed sheets) ===== */
 (function () {
   var cv = document.getElementById("wall"), ctx = cv.getContext("2d");
@@ -749,7 +638,6 @@
     ctx.save();
     ctx.translate(s.x + tx * z * 55, s.y + ty * z * 34);
     ctx.rotate(s.r);
-    var fade = s.st > 0.9 ? 1 : 1;
     ctx.globalAlpha = 0.16 + z * 0.6;
     ctx.shadowColor = "rgba(0,0,0,.45)"; ctx.shadowBlur = 26 * z; ctx.shadowOffsetY = 12 * z;
     ctx.fillStyle = "#fff"; rr(x0, y0, w, h, 5 + z * 4); ctx.fill();
@@ -822,6 +710,6 @@
   }
 })();
 </script>
-<script type="module" src="shared/auth.js"></script>
+<script type="module" src="/shared/auth.js"></script>
 </body>
 </html>

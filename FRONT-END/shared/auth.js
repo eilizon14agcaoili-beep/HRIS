@@ -144,7 +144,9 @@ form.addEventListener("submit", async (e) => {
       const snap = await step(getDoc(doc(db, "users", cred.user.uid)), "checking your role (Firestore)");
       if (!snap.exists() || snap.data().role !== role) {
         await signOut(auth);
-        throw { message: `This account is not an ${COPY[role].name}. Pick the correct tab above.` };
+       throw { message: role === "manager"
+  ? "This account is not an HR account. Use the Recruitment / Coordinator login."
+  : "This account is not a Recruitment / Coordinator account. Use the HR login at /hr/login." };
       }
       // Older accounts have no verifyRequired flag, so they can still log in
       if (snap.data().verifyRequired === true && !cred.user.emailVerified) {
