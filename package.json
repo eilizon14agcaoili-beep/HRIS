@@ -1,0 +1,17 @@
+{
+  "name": "hris",
+  "version": "1.0.0",
+  "description": "- FRONT-END: open each page's index.html with Live Server. Fill in FRONT-END/shared/firebase-config.js. - BACK-END: fill in .env, then `npm install` and `npm run dev`. - Firebase console: enable Authentication (Email/Password) and create a Firestore database.",
+  "main": "index.js",
+  "scripts": {
+    "start": "concurrently -k -n API,WEB -c red,blue \"npm --prefix BACK-END start\" \"http-server FRONT-END -p 5501 -c-1\""
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "devDependencies": {
+    "concurrently": "^10.0.6",
+    "http-server": "^14.1.1"
+  }
+}

@@ -1,0 +1,827 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>HRIS</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&family=Figtree:wght@400;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="shared/styles.css">
+<style>
+  /* ============ Tokens (red + white default, green and blue optional) ============ */
+  :root{
+    --err:#b42318;--ok:#067647;--ok2:#22c55e;
+    --bg0:#1b0709;--bg1:#3d0d14;--bg2:#7f1d1d;
+    --acc:#ef4444;--acc2:#b91c1c;--ring:rgba(239,68,68,.28);
+    --ink:#2a1215;--muted:#7a5b5f;--line:#ecd9db;--tint:#fff5f5;
+    --display:"Bricolage Grotesque","Figtree",system-ui,sans-serif;
+    --body:"Figtree",system-ui,sans-serif;
+  }
+  html[data-theme="green"]{--bg0:#04160c;--bg1:#0b3a1f;--bg2:#14532d;--acc:#22c55e;--acc2:#15803d;--ring:rgba(34,197,94,.28);--ink:#10241a;--muted:#4f6b58;--line:#d5e8db;--tint:#f3fbf6}
+  html[data-theme="blue"]{--bg0:#060d24;--bg1:#13296b;--bg2:#1e3a8a;--acc:#3b82f6;--acc2:#1d4ed8;--ring:rgba(59,130,246,.28);--ink:#0f1a33;--muted:#53668c;--line:#d7e1f5;--tint:#f4f7fe}
+
+  [hidden]{display:none!important}
+  *{box-sizing:border-box}
+  html{height:100%}
+  body{
+    margin:0!important;width:100%;min-height:100vh;min-height:100dvh;
+    display:flex!important;flex-direction:row!important;align-items:center!important;justify-content:center!important;
+    padding:28px!important;overflow-x:hidden;
+    font-family:var(--body);color:#fff;
+    background:
+      radial-gradient(900px 560px at 12% 8%,var(--bg2),transparent 62%),
+      radial-gradient(700px 500px at 92% 100%,var(--bg1),transparent 65%),
+      linear-gradient(160deg,var(--bg1),var(--bg0))!important;
+    background-attachment:fixed!important;
+    transition:background .6s;
+  }
+  /* wallpaper canvas + slow colour glow */
+  #wall{position:fixed;inset:0;width:100%;height:100%;z-index:0;pointer-events:none}
+  .glow{position:fixed;width:60vmax;height:60vmax;left:-15vmax;top:-20vmax;border-radius:50%;z-index:0;pointer-events:none;
+    background:radial-gradient(circle,var(--acc),transparent 62%);opacity:.22;filter:blur(30px);animation:glowDrift 22s ease-in-out infinite alternate}
+  .glow.g2{left:auto;right:-20vmax;top:auto;bottom:-25vmax;opacity:.16;animation-duration:30s;animation-direction:alternate-reverse}
+  @keyframes glowDrift{to{transform:translate(18vmax,14vmax) scale(1.15)}}
+
+  /* ============ Theme dots ============ */
+  .themes{position:fixed;top:22px;right:28px;z-index:4;display:flex;gap:10px;padding:7px 10px;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.28);border-radius:999px;-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px)}
+  .themes button{width:22px;height:22px;margin:0;padding:0;border:2px solid #fff;border-radius:50%;cursor:pointer;box-shadow:0 1px 4px rgba(0,0,0,.35);transition:transform .2s}
+  .themes button:hover{transform:scale(1.2)}
+  .themes button[data-theme="red"]{background:#dc2626}
+  .themes button[data-theme="green"]{background:#16a34a}
+  .themes button[data-theme="blue"]{background:#2563eb}
+  .themes button[aria-pressed="true"]{outline:2px solid #fff;outline-offset:3px}
+  .themes button:focus-visible{outline:2px solid #fff;outline-offset:3px}
+
+  /* ============ Layout ============ */
+  .shell{position:relative;z-index:2;width:100%;max-width:1080px;display:grid;grid-template-columns:minmax(0,1fr) 440px;gap:64px;align-items:center}
+
+  /* ---- Left: brand + live checklist ---- */
+  .shell .side{position:relative!important;top:auto!important;left:auto!important;width:auto!important;min-height:0!important;padding:0!important;background:none!important;display:flex;flex-direction:column;gap:38px}
+  .brand{display:inline-flex;align-items:center;gap:12px;font-family:var(--display);font-weight:800;font-size:1.5rem;letter-spacing:.06em;color:#fff}
+  .mark{display:grid;place-items:center;width:42px;height:42px;border-radius:12px;background:#fff;color:var(--acc2);font-size:1rem;letter-spacing:0;box-shadow:0 8px 22px rgba(0,0,0,.3)}
+  .headline{margin:0;max-width:11ch;font-family:var(--display);font-weight:800;font-size:clamp(2.4rem,5vw,4rem);line-height:1;letter-spacing:-.025em;text-wrap:balance}
+  .lede{margin:16px 0 0;max-width:38ch;font-size:1.02rem;line-height:1.55;color:rgba(255,255,255,.78)}
+
+  /* ---- Chibi characters (change with the selected role) ---- */
+  .stage{position:relative;width:100%;max-width:440px;height:262px}
+  .stage::after{content:"";position:absolute;left:6px;bottom:-4px;width:190px;height:26px;border-radius:50%;background:radial-gradient(ellipse,rgba(255,255,255,.28),transparent 70%)}
+  .pal{position:absolute;left:0;bottom:0;display:flex;align-items:flex-end;gap:10px;opacity:0;pointer-events:none;transform:translateY(34px) scale(.5);transform-origin:50% 100%;transition:opacity .25s,transform .25s}
+  .pal.on{opacity:1;transform:none;transition:opacity .3s,transform .6s cubic-bezier(.3,1.7,.45,1)}
+  .pal svg{width:190px;height:228px;flex:none;overflow:visible}
+  .pal.hop svg{animation:hop .55s cubic-bezier(.3,1.6,.5,1)}
+  @keyframes hop{30%{transform:translateY(-22px) scale(.96,1.05)}60%{transform:translateY(0) scale(1.06,.94)}}
+  .bubble{position:relative;align-self:center;margin-bottom:96px;max-width:190px;padding:11px 14px;border-radius:16px;background:#fff;color:var(--ink);font-size:.88rem;font-weight:700;line-height:1.35;box-shadow:0 12px 26px rgba(0,0,0,.28);opacity:0;transform:scale(.6);transform-origin:0 70%}
+  .bubble::before{content:"";position:absolute;left:-7px;top:62%;width:14px;height:14px;background:#fff;border-radius:3px;transform:rotate(45deg)}
+  .pal.on .bubble{animation:bubbleIn .5s .45s cubic-bezier(.3,1.6,.5,1) forwards}
+  @keyframes bubbleIn{to{opacity:1;transform:none}}
+
+  .chibi .shadow{transform-box:fill-box;transform-origin:center;animation:shadowPulse 1.7s ease-in-out infinite alternate}
+  @keyframes shadowPulse{to{transform:scale(.86);opacity:.7}}
+  .chibi .bob{animation:bob 1.7s ease-in-out infinite alternate}
+  @keyframes bob{to{transform:translateY(-6px)}}
+  .chibi .eyes{transform-box:fill-box;transform-origin:center;animation:blink 4.2s infinite}
+  @keyframes blink{0%,93%,100%{transform:scaleY(1)}96%{transform:scaleY(.1)}}
+  .chibi .wave{transform-origin:122px 160px;animation:wave .7s ease-in-out infinite alternate}
+  @keyframes wave{from{transform:rotate(-12deg)}to{transform:rotate(18deg)}}
+  .chibi .tick{stroke-dasharray:16;stroke-dashoffset:16;animation:tick 4.2s infinite}
+  .chibi .tick.t2{animation-delay:.5s}.chibi .tick.t3{animation-delay:1s}
+  @keyframes tick{0%,8%{stroke-dashoffset:16}20%,78%{stroke-dashoffset:0}92%,100%{stroke-dashoffset:16}}
+  .chibi .stamp{transform-origin:128px 160px;animation:stamp 2.6s ease-in infinite}
+  @keyframes stamp{0%,32%{transform:translateY(0)}48%,60%{transform:translateY(26px)}80%,100%{transform:translateY(0)}}
+  .chibi .approved{opacity:0;transform-box:fill-box;transform-origin:center;animation:approved 2.6s infinite}
+  @keyframes approved{0%,46%{opacity:0;transform:scale(.3)}52%{opacity:1;transform:scale(1.25)}58%,88%{opacity:1;transform:scale(1)}100%{opacity:0;transform:scale(1)}}
+  .chibi .paper{transform-box:fill-box;transform-origin:center;animation:paperJolt 2.6s infinite}
+  @keyframes paperJolt{0%,46%,60%,100%{transform:rotate(6deg)}52%{transform:rotate(3deg) translateY(2px)}}
+  .chibi .float{animation:floatUp 2.8s ease-out infinite;opacity:0}
+  .chibi .float.f2{animation-delay:1.4s}
+  @keyframes floatUp{0%{opacity:0;transform:translateY(8px)}20%{opacity:1}100%{opacity:0;transform:translateY(-34px)}}
+
+  /* ---- Right: form card ---- */
+  .shell main{display:block!important;width:100%!important;max-width:440px!important;margin:0!important;padding:0!important;background:none!important;position:relative}
+  .shell .card{
+    position:relative;width:100%;margin:0!important;padding:30px 30px 24px!important;
+    background:#fff!important;color:var(--ink);
+    border:0!important;border-radius:24px!important;
+    box-shadow:0 30px 70px rgba(10,0,2,.5),0 0 0 1px rgba(255,255,255,.5)!important;
+    -webkit-backdrop-filter:none!important;backdrop-filter:none!important;
+    animation:cardIn .9s cubic-bezier(.2,.8,.2,1) .15s backwards;
+    transform-origin:50% 100%;
+  }
+  .shell .card::before{content:"";position:absolute;left:30px;right:30px;top:0;height:4px;border-radius:0 0 6px 6px;background:linear-gradient(90deg,var(--acc),var(--acc2))}
+  @keyframes cardIn{from{opacity:0;transform:translateY(40px) rotateX(10deg)}}
+  .card.shake{animation:shake .5s}
+  @keyframes shake{0%,100%{transform:none}15%{transform:translateX(-9px)}30%{transform:translateX(8px)}45%{transform:translateX(-6px)}60%{transform:translateX(5px)}75%{transform:translateX(-3px)}}
+
+  /* role tabs: sliding pill */
+  .seg{display:grid;grid-template-columns:1fr 1fr;gap:0;padding:4px;background:var(--tint);border:1px solid var(--line);border-radius:14px;position:relative}
+  .seg::before{content:"";position:absolute;top:4px;bottom:4px;left:4px;width:calc(50% - 4px);border-radius:10px;background:linear-gradient(120deg,var(--acc),var(--acc2));box-shadow:0 6px 16px var(--ring);transition:transform .35s cubic-bezier(.3,1.2,.4,1)}
+  .seg:has(button:nth-child(2)[aria-pressed="true"])::before{transform:translateX(100%)}
+  .seg button{position:relative;z-index:1;width:auto;margin:0;padding:10px 8px;border:0;border-radius:10px;background:transparent;color:var(--muted);font:inherit;font-weight:700;font-size:.82rem;line-height:1.25;cursor:pointer;transition:color .25s}
+  .seg button[aria-pressed="true"]{color:#fff}
+  .seg button:focus-visible{outline:2px solid var(--acc2);outline-offset:2px}
+  #modeTabs{display:none}
+
+  #formSub{display:none!important}
+  h1{margin:24px 0 2px;font-family:var(--display);font-weight:800;font-size:1.55rem;line-height:1.15;letter-spacing:-.015em;color:var(--ink);text-align:left}
+  .subline{margin:0 0 6px;font-size:.92rem;color:var(--muted)}
+
+  /* floating-label fields */
+  .fld{position:relative;margin-top:14px}
+  .fld input{display:block;width:100%;height:54px;margin:0;padding:22px 16px 6px;font:inherit;font-weight:600;color:var(--ink);background:#fff;border:1.5px solid var(--line);border-radius:12px;outline:none;transition:border-color .2s,box-shadow .2s}
+  .fld input::placeholder{color:transparent}
+  .fld input:hover{border-color:#d9bfc2}
+  .fld input:focus{border-color:var(--acc);box-shadow:0 0 0 4px var(--ring)}
+  .fld label{position:absolute;left:17px;top:16px;margin:0;color:var(--muted);font-weight:600;font-size:1rem;pointer-events:none;transform-origin:left top;transition:transform .2s,color .2s}
+  .fld input:focus + label,.fld input:not(:placeholder-shown) + label{transform:translateY(-10px) scale(.74)}
+  .fld input:focus + label{color:var(--acc2)}
+  .fld input:-webkit-autofill{-webkit-box-shadow:0 0 0 40px var(--tint) inset;-webkit-text-fill-color:var(--ink)}
+  .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+
+  /* password eye */
+  .pw input{padding-right:52px}
+  .eye{position:absolute;top:10px;right:8px;display:grid;place-items:center;width:34px;height:34px;margin:0;padding:0;border:0;border-radius:9px;background:transparent;color:var(--muted);cursor:pointer;transition:background .2s,color .2s}
+  .eye:hover{background:var(--tint);color:var(--acc2)}
+  .eye:focus-visible{outline:2px solid var(--acc2)}
+  input::-ms-reveal,input::-ms-clear{display:none!important}
+  input[type="password"]::-webkit-credentials-auto-fill-button{display:none!important}
+  .eye .i-hide{display:none}
+  .eye[aria-pressed="true"] .i-show{display:none}
+  .eye[aria-pressed="true"] .i-hide{display:block}
+
+  /* helpers under password */
+  .caps{display:flex;align-items:center;gap:6px;margin:8px 2px 0;font-size:.82rem;font-weight:700;color:var(--warn,#9a6700)}
+  .strength{margin:10px 2px 0}
+  .strength .bars{display:grid;grid-template-columns:repeat(4,1fr);gap:5px}
+  .strength .bars i{height:5px;border-radius:5px;background:var(--line);transition:background .25s}
+  .strength[data-s="1"] .bars i:nth-child(-n+1){background:#ef4444}
+  .strength[data-s="2"] .bars i:nth-child(-n+2){background:#f59e0b}
+  .strength[data-s="3"] .bars i:nth-child(-n+3){background:#84cc16}
+  .strength[data-s="4"] .bars i:nth-child(-n+4){background:var(--ok2)}
+  .strength span{display:block;margin-top:5px;font-size:.78rem;font-weight:700;color:var(--muted)}
+
+  #nameField:not([hidden]),#confirmField:not([hidden]){animation:slideDown .4s cubic-bezier(.2,.8,.2,1) backwards}
+  @keyframes slideDown{from{opacity:0;transform:translateY(-10px)}}
+
+  /* buttons */
+  #submitBtn,#otpBtn{
+    position:relative;overflow:hidden;display:block;width:100%;margin-top:22px;padding:15px 18px;
+    border:0;border-radius:12px;color:#fff;font:inherit;font-weight:800;font-size:1rem;letter-spacing:.01em;cursor:pointer;
+    background:linear-gradient(120deg,var(--acc),var(--acc2));box-shadow:0 12px 26px var(--ring);
+    transition:transform .15s,filter .2s,box-shadow .2s;
+  }
+  #submitBtn:hover:not(:disabled),#otpBtn:hover:not(:disabled){filter:brightness(1.08);transform:translateY(-2px);box-shadow:0 16px 32px var(--ring)}
+  #submitBtn:active:not(:disabled),#otpBtn:active:not(:disabled){transform:scale(.98)}
+  #submitBtn:focus-visible,#otpBtn:focus-visible{outline:3px solid var(--ink);outline-offset:3px}
+  #submitBtn:disabled,#otpBtn:disabled{cursor:progress;color:transparent;opacity:.9}
+  #submitBtn:disabled::before,#otpBtn:disabled::before{content:"";position:absolute;left:50%;top:50%;width:20px;height:20px;margin:-10px 0 0 -10px;border:3px solid rgba(255,255,255,.4);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  #submitBtn::after,#otpBtn::after{content:"";position:absolute;top:0;left:-70%;width:50%;height:100%;background:linear-gradient(100deg,transparent,rgba(255,255,255,.4),transparent);transform:skewX(-20deg);transition:left .6s}
+  #submitBtn:hover::after,#otpBtn:hover::after{left:130%}
+  .ripple{position:absolute;border-radius:50%;background:rgba(255,255,255,.5);transform:scale(0);animation:rip .65s linear;pointer-events:none}
+  @keyframes rip{to{transform:scale(2.6);opacity:0}}
+
+  .msg{min-height:1.3em;margin-top:14px;text-align:center;font-size:.9rem;color:var(--muted)}
+  .msg.err,.msg.error{color:var(--err);font-weight:700}
+  .msg.ok,.msg.success{color:var(--ok);font-weight:700}
+
+  .switch{margin:14px 0 0;text-align:center;font-size:.9rem;color:var(--muted)}
+  .switch a{color:var(--acc2);font-weight:800;text-decoration:none;border-bottom:2px solid transparent;transition:border-color .2s}
+  .switch a:hover,.switch a:focus-visible{border-bottom-color:var(--acc2);outline:none}
+
+  /* OTP */
+  #otpForm .fld{margin-top:20px}
+  #otp{height:64px;padding:8px 12px 8px calc(12px + .5em);text-align:center;letter-spacing:.5em;font-size:1.7rem;font-weight:800}
+  #otpForm .email-chip{display:inline-block;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;vertical-align:bottom;font-weight:800;color:var(--ink)}
+  #otpForm .sub{margin:8px 0 0;color:var(--muted);font-size:.92rem;line-height:1.5}
+  .link-btn{display:block;margin:16px auto 0;padding:6px 8px;border:0;background:transparent;color:var(--acc2);font:inherit;font-weight:700;font-size:.9rem;cursor:pointer;text-decoration:underline;text-underline-offset:3px}
+
+  /* ============ Responsive ============ */
+  @media(max-width:960px){
+    .shell{grid-template-columns:minmax(0,440px);justify-content:center;gap:26px}
+    .shell .side{gap:0;align-items:center}
+    .headline,.lede{display:none}
+    .stage{height:236px;margin:0 auto;max-width:300px}
+    .bubble{display:none}
+    .pal{left:50%;margin-left:-95px}
+  }
+  @media(max-width:520px){
+    body{padding:16px!important;align-items:flex-start!important}
+    .themes{top:12px;right:12px}
+    .shell{margin-top:56px}
+    .shell .card{padding:24px 20px 20px!important}
+  }
+
+  @media(prefers-reduced-motion:reduce){
+    *,*::before,*::after{animation:none!important;transition:none!important}
+    .glow{display:none}
+  }
+</style>
+<script>try{var t=localStorage.getItem("hris-theme");if(t==="green"||t==="blue")document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
+</head>
+<body data-role="staff">
+
+<canvas id="wall" aria-hidden="true"></canvas>
+<div class="glow" aria-hidden="true"></div>
+<div class="glow g2" aria-hidden="true"></div>
+
+<div class="themes" id="themes" role="group" aria-label="Color theme">
+  <button type="button" data-theme="red" aria-label="Red and white" title="Red" aria-pressed="true"></button>
+  <button type="button" data-theme="green" aria-label="Green and white" title="Green" aria-pressed="false"></button>
+  <button type="button" data-theme="blue" aria-label="Blue and white" title="Blue" aria-pressed="false"></button>
+</div>
+
+<div class="shell">
+  <aside class="side">
+    <div class="brand"><span class="mark">HR</span>HRIS</div>
+    <div class="hero">
+      <h2 class="headline">Every 201 file, accounted for.</h2>
+      <p class="lede">Submit employee records, upload requirements, and see what is still missing at a glance.</p>
+    </div>
+    <div class="stage" id="stage" aria-hidden="true">
+
+      <!-- Recruiter / Coordinator: headset, ID lanyard, clipboard, waving -->
+      <div class="pal on" id="palStaff">
+        <svg class="chibi" viewBox="0 0 200 240" xmlns="http://www.w3.org/2000/svg">
+          <ellipse class="shadow" cx="100" cy="229" rx="44" ry="7" fill="rgba(0,0,0,.3)"/>
+          <g class="bob">
+            <!-- legs + shoes -->
+            <rect x="80" y="192" width="15" height="28" rx="7" fill="#2a2f45"/>
+            <rect x="105" y="192" width="15" height="28" rx="7" fill="#2a2f45"/>
+            <ellipse cx="86" cy="223" rx="13" ry="6" fill="#fff"/>
+            <ellipse cx="114" cy="223" rx="13" ry="6" fill="#fff"/>
+            <!-- waving arm (behind the body) -->
+            <g class="wave">
+              <path d="M120 162 L150 132" stroke="#ffd9b8" stroke-width="12" stroke-linecap="round" fill="none"/>
+              <circle cx="152" cy="128" r="8.5" fill="#ffd9b8"/>
+            </g>
+            <!-- body: polo in the theme colour -->
+            <rect x="68" y="140" width="64" height="62" rx="24" fill="var(--acc)"/>
+            <path d="M90 142 L100 172 L110 142" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+            <rect x="92.5" y="170" width="15" height="19" rx="3.5" fill="#fff"/>
+            <rect x="95.5" y="174" width="9" height="7" rx="2" fill="var(--acc2)"/>
+            <rect x="95.5" y="183" width="9" height="2" rx="1" fill="#d6c7c9"/>
+            <!-- left arm + clipboard -->
+            <path d="M74 156 Q58 168 64 186" stroke="#ffd9b8" stroke-width="12" stroke-linecap="round" fill="none"/>
+            <g transform="rotate(-8 56 178)">
+              <rect x="36" y="150" width="40" height="52" rx="5" fill="#c98f4f"/>
+              <rect x="40" y="157" width="32" height="42" rx="3" fill="#fff"/>
+              <rect x="48" y="146" width="16" height="9" rx="3" fill="#7a5a33"/>
+              <path class="tick" d="M43 166 L46 169 L51 163" fill="none" stroke="#22c55e" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+              <path class="tick t2" d="M43 177 L46 180 L51 174" fill="none" stroke="#22c55e" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+              <path class="tick t3" d="M43 188 L46 191 L51 185" fill="none" stroke="#22c55e" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+              <rect x="55" y="165" width="14" height="3" rx="1.5" fill="#e6dcdd"/>
+              <rect x="55" y="176" width="14" height="3" rx="1.5" fill="#e6dcdd"/>
+              <rect x="55" y="187" width="14" height="3" rx="1.5" fill="#e6dcdd"/>
+            </g>
+            <circle cx="66" cy="188" r="7.5" fill="#ffd9b8"/>
+            <!-- head -->
+            <circle cx="100" cy="92" r="50" fill="#ffd9b8"/>
+            <path d="M49 92 Q46 38 100 38 Q154 38 151 92 Q140 66 100 64 Q60 66 49 92Z" fill="#3a2a22"/>
+            <path d="M70 66 Q92 54 118 64 Q96 58 78 74Z" fill="#4d3a2f"/>
+            <!-- headset -->
+            <path d="M52 90 Q48 44 100 44 Q152 44 148 90" fill="none" stroke="#2a2f45" stroke-width="5" stroke-linecap="round"/>
+            <rect x="43" y="84" width="11" height="22" rx="5.5" fill="var(--acc2)"/>
+            <rect x="146" y="84" width="11" height="22" rx="5.5" fill="var(--acc2)"/>
+            <path d="M48 104 Q52 126 80 124" fill="none" stroke="#2a2f45" stroke-width="3" stroke-linecap="round"/>
+            <circle cx="82" cy="124" r="4.5" fill="#2a2f45"/>
+            <!-- face -->
+            <g class="eyes">
+              <ellipse cx="82" cy="97" rx="5.5" ry="7.5" fill="#2a1a1a"/>
+              <ellipse cx="118" cy="97" rx="5.5" ry="7.5" fill="#2a1a1a"/>
+              <circle cx="84" cy="94" r="2" fill="#fff"/><circle cx="120" cy="94" r="2" fill="#fff"/>
+            </g>
+            <circle cx="68" cy="110" r="7" fill="rgba(255,110,110,.45)"/>
+            <circle cx="132" cy="110" r="7" fill="rgba(255,110,110,.45)"/>
+            <path d="M90 112 Q100 123 110 112" fill="#b0463d" stroke="#b0463d" stroke-width="2" stroke-linejoin="round"/>
+            <path d="M94 114 Q100 119 106 114Z" fill="#fff"/>
+            <!-- floating file icons -->
+            <g class="float"><rect x="160" y="150" width="12" height="15" rx="2" fill="#fff"/><rect x="163" y="154" width="6" height="2" fill="var(--acc2)"/></g>
+            <g class="float f2"><rect x="30" y="118" width="12" height="15" rx="2" fill="#fff"/><rect x="33" y="122" width="6" height="2" fill="var(--acc2)"/></g>
+          </g>
+        </svg>
+        <div class="bubble">Let’s collect every 201 requirement!</div>
+      </div>
+
+      <!-- HR: bun, glasses, blazer + tie, approving files with a stamp -->
+      <div class="pal" id="palHr">
+        <svg class="chibi" viewBox="0 0 200 240" xmlns="http://www.w3.org/2000/svg">
+          <ellipse class="shadow" cx="100" cy="229" rx="44" ry="7" fill="rgba(0,0,0,.3)"/>
+          <g class="bob">
+            <!-- legs + shoes -->
+            <rect x="80" y="192" width="15" height="28" rx="7" fill="#1d2338"/>
+            <rect x="105" y="192" width="15" height="28" rx="7" fill="#1d2338"/>
+            <ellipse cx="86" cy="223" rx="13" ry="6" fill="#2b2b3a"/>
+            <ellipse cx="114" cy="223" rx="13" ry="6" fill="#2b2b3a"/>
+            <!-- stamping arm (behind the body) -->
+            <g class="stamp">
+              <path d="M118 162 L150 138" stroke="#26304f" stroke-width="13" stroke-linecap="round" fill="none"/>
+              <circle cx="153" cy="136" r="8.5" fill="#ffd9b8"/>
+              <rect x="148" y="112" width="10" height="22" rx="4" fill="#8a5a3a"/>
+              <rect x="141" y="141" width="24" height="9" rx="2.5" fill="#6b3a22"/>
+              <rect x="143" y="148" width="20" height="4" rx="2" fill="var(--acc)"/>
+            </g>
+            <!-- paper being approved -->
+            <g class="paper">
+              <rect x="132" y="178" width="52" height="34" rx="3" fill="#fff" stroke="rgba(0,0,0,.12)"/>
+              <rect x="138" y="184" width="22" height="3" rx="1.5" fill="#e6dcdd"/>
+              <rect x="138" y="191" width="30" height="3" rx="1.5" fill="#e6dcdd"/>
+              <rect x="138" y="198" width="16" height="3" rx="1.5" fill="#e6dcdd"/>
+              <g class="approved">
+                <circle cx="171" cy="199" r="9" fill="#22c55e"/>
+                <path d="M166 199 L170 203 L177 195" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>
+              </g>
+            </g>
+            <!-- body: blazer, shirt, tie -->
+            <rect x="68" y="140" width="64" height="62" rx="24" fill="#26304f"/>
+            <path d="M90 142 L100 170 L110 142Z" fill="#fff"/>
+            <path d="M78 146 L94 146 L100 172 L88 190Z" fill="#1d2640"/>
+            <path d="M122 146 L106 146 L100 172 L112 190Z" fill="#1d2640"/>
+            <path d="M97 150 L103 150 L106 176 L100 186 L94 176Z" fill="var(--acc)"/>
+            <rect x="94" y="147" width="12" height="6" rx="2" fill="var(--acc2)"/>
+            <!-- left arm + folder -->
+            <path d="M74 156 Q58 168 66 186" stroke="#26304f" stroke-width="13" stroke-linecap="round" fill="none"/>
+            <g transform="rotate(-8 56 178)">
+              <rect x="34" y="158" width="42" height="40" rx="5" fill="var(--acc2)"/>
+              <path d="M34 164 Q34 158 40 158 L52 158 L57 164Z" fill="var(--acc)"/>
+              <rect x="42" y="172" width="26" height="3" rx="1.5" fill="rgba(255,255,255,.7)"/>
+              <rect x="42" y="179" width="18" height="3" rx="1.5" fill="rgba(255,255,255,.7)"/>
+            </g>
+            <circle cx="66" cy="188" r="7.5" fill="#ffd9b8"/>
+            <!-- head -->
+            <circle cx="100" cy="92" r="50" fill="#ffd9b8"/>
+            <circle cx="100" cy="38" r="15" fill="#2b1d1a"/>
+            <path d="M49 92 Q44 40 100 40 Q156 40 151 92 Q142 66 118 64 Q92 74 60 70 Q52 80 49 92Z" fill="#2b1d1a"/>
+            <path d="M78 54 Q100 44 124 56" fill="none" stroke="#45322d" stroke-width="3" stroke-linecap="round"/>
+            <!-- glasses + face -->
+            <circle cx="82" cy="97" r="14" fill="rgba(255,255,255,.28)" stroke="#2b2b3a" stroke-width="3"/>
+            <circle cx="118" cy="97" r="14" fill="rgba(255,255,255,.28)" stroke="#2b2b3a" stroke-width="3"/>
+            <path d="M96 96 L104 96" stroke="#2b2b3a" stroke-width="3" stroke-linecap="round"/>
+            <g class="eyes">
+              <ellipse cx="82" cy="98" rx="4.8" ry="6.8" fill="#2a1a1a"/>
+              <ellipse cx="118" cy="98" rx="4.8" ry="6.8" fill="#2a1a1a"/>
+              <circle cx="84" cy="95" r="1.8" fill="#fff"/><circle cx="120" cy="95" r="1.8" fill="#fff"/>
+            </g>
+            <circle cx="68" cy="114" r="6.5" fill="rgba(255,110,110,.42)"/>
+            <circle cx="132" cy="114" r="6.5" fill="rgba(255,110,110,.42)"/>
+            <path d="M92 116 Q100 124 108 116" fill="none" stroke="#b0463d" stroke-width="3" stroke-linecap="round"/>
+          </g>
+        </svg>
+        <div class="bubble">Ready to review and approve 201 files.</div>
+      </div>
+    </div>
+    <!-- kept for auth.js -->
+    <div hidden><h2 id="sideTitle">Your 201 file, in one place.</h2><p id="sideText">Submit requests and upload your requirements.</p></div>
+  </aside>
+
+  <main>
+  <form id="authForm" class="card" data-mode="login" data-role="staff">
+    <div class="seg" id="roleTabs" role="group" aria-label="Account type">
+      <button type="button" data-role="staff" aria-pressed="true">Recruitment / Coordinator</button>
+      <button type="button" data-role="manager" aria-pressed="false">HR</button>
+    </div>
+    <!-- kept for auth.js; hidden, the Register / Log in link below clicks it -->
+    <div class="seg mode" id="modeTabs" role="group" aria-label="Action">
+      <button type="button" data-mode="login" aria-pressed="true">Log in</button>
+      <button type="button" data-mode="register" aria-pressed="false">Register</button>
+    </div>
+
+    <h1 id="formTitle">Recruitment / Coordinator Log-in</h1>
+    <p class="subline" id="subLine">Submit employee 201 files and track what is missing.</p>
+    <p class="sub" id="formSub">Log in to submit and track your 201 file.</p>
+
+    <div id="nameField" hidden>
+      <div class="fld">
+        <input id="fullName" name="fullName" autocomplete="name" placeholder=" ">
+        <label for="fullName">Full name</label>
+      </div>
+    </div>
+
+    <div class="fld">
+      <input id="email" name="email" type="email" autocomplete="email" placeholder=" " required>
+      <label for="email">Email</label>
+    </div>
+
+    <div class="fld pw">
+      <input id="password" name="password" type="password" minlength="6" autocomplete="current-password" placeholder=" " required>
+      <label for="password">Password</label>
+      <button type="button" class="eye" aria-label="Show password" aria-pressed="false"><svg class="i-show" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg><svg class="i-hide" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17.9 17.9A10.9 10.9 0 0 1 12 19c-6.4 0-10-7-10-7a18.5 18.5 0 0 1 5.1-5.9M9.9 4.2A10 10 0 0 1 12 4c6.4 0 10 7 10 7a18.6 18.6 0 0 1-2.2 3.2M1 1l22 22"/><path d="M14.1 14.1a3 3 0 1 1-4.2-4.2"/></svg></button>
+    </div>
+    <div class="caps" id="capsHint" hidden>
+      <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3 4 13h5v4h6v-4h5z"/><path d="M9 21h6"/></svg>
+      Caps Lock is on
+    </div>
+    <div class="strength" id="strength" data-s="0" hidden>
+      <div class="bars"><i></i><i></i><i></i><i></i></div>
+      <span id="strengthLbl">Use 8 or more characters</span>
+    </div>
+
+    <div id="confirmField" hidden>
+      <div class="fld pw">
+        <input id="confirm" name="confirm" type="password" minlength="6" autocomplete="new-password" placeholder=" ">
+        <label for="confirm">Confirm password</label>
+        <button type="button" class="eye" aria-label="Show password" aria-pressed="false"><svg class="i-show" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg><svg class="i-hide" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17.9 17.9A10.9 10.9 0 0 1 12 19c-6.4 0-10-7-10-7a18.5 18.5 0 0 1 5.1-5.9M9.9 4.2A10 10 0 0 1 12 4c6.4 0 10 7 10 7a18.6 18.6 0 0 1-2.2 3.2M1 1l22 22"/><path d="M14.1 14.1a3 3 0 1 1-4.2-4.2"/></svg></button>
+      </div>
+    </div>
+
+    <button type="submit" id="submitBtn">Log in</button>
+    <div id="msg" class="msg" role="status" aria-live="polite"></div>
+    <p class="switch"><span id="switchLbl">Don’t have an account?</span> <a href="#" id="switchLnk">Register</a></p>
+  </form>
+
+  <!-- OTP step: shown right after a successful registration -->
+  <form id="otpForm" class="card" hidden novalidate>
+    <h1 id="otpTitle" style="margin-top:6px">Enter your code</h1>
+    <p class="sub" id="otpSub">
+      Account created for <span class="email-chip" id="otpEmail"></span>.
+      Ask the admin for your 6-digit code, then enter it below.
+    </p>
+
+    <label class="sr" for="otp">6-digit code</label>
+    <div class="fld">
+      <input id="otp" name="otp" inputmode="numeric" pattern="[0-9]{6}" maxlength="6"
+             autocomplete="one-time-code" placeholder="000000" aria-describedby="otpMsg" required>
+    </div>
+
+    <button type="submit" id="otpBtn">Verify account</button>
+    <div id="otpMsg" class="msg" role="status" aria-live="polite"></div>
+    <button type="button" class="link-btn" id="otpBack">Back to log in</button>
+  </form>
+  </main>
+</div>
+
+<script>
+/* Color theme picker (remembered in this browser) */
+(function () {
+  var box = document.getElementById("themes");
+  function set(t, save) {
+    if (t === "red") document.documentElement.removeAttribute("data-theme");
+    else document.documentElement.setAttribute("data-theme", t);
+    box.querySelectorAll("button").forEach(function (b) { b.setAttribute("aria-pressed", String(b.dataset.theme === t)); });
+    if (save) { try { localStorage.setItem("hris-theme", t); } catch (e) {} }
+    document.dispatchEvent(new Event("hris:theme"));
+  }
+  box.addEventListener("click", function (e) {
+    var b = e.target.closest("button[data-theme]");
+    if (b) set(b.dataset.theme, true);
+  });
+  set(document.documentElement.getAttribute("data-theme") || "red", false);
+})();
+</script>
+
+<script>
+/* Title + subtitle follow the selected tabs */
+(function () {
+  var h1 = document.getElementById("formTitle"), sub = document.getElementById("subLine");
+  var NAMES = { staff: "Recruitment / Coordinator", manager: "HR" };
+  var SUBS = {
+    staff: { login: "Submit employee 201 files and track what is still missing.", register: "Create your account to start submitting 201 files." },
+    manager: { login: "Review and approve complete 201 files.", register: "Create your HR account to review 201 files." }
+  };
+  function apply() {
+    var r = document.querySelector('#roleTabs [aria-pressed="true"]');
+    var m = document.querySelector('#modeTabs [aria-pressed="true"]');
+    var role = (r && r.dataset.role) || "staff", mode = (m && m.dataset.mode) || "login";
+    var text = NAMES[role] + (mode === "login" ? " Log-in" : " Register");
+    if (h1.textContent !== text) h1.textContent = text;
+    if (sub.textContent !== SUBS[role][mode]) sub.textContent = SUBS[role][mode];
+  }
+  new MutationObserver(apply).observe(document.querySelector("main"), {
+    subtree: true, childList: true, characterData: true,
+    attributes: true, attributeFilter: ["aria-pressed", "data-role", "data-mode"]
+  });
+  ["roleTabs", "modeTabs"].forEach(function (id) {
+    document.getElementById(id).addEventListener("click", function () { setTimeout(apply, 0); });
+  });
+  apply();
+})();
+</script>
+
+<script>
+/* "Don’t have an account? Register" / "Already have an account? Log in" (clicks the hidden tab) */
+(function () {
+  var tabs = document.getElementById("modeTabs");
+  var lbl = document.getElementById("switchLbl");
+  var lnk = document.getElementById("switchLnk");
+  function mode() { var p = tabs.querySelector('[aria-pressed="true"]'); return p ? p.dataset.mode : "login"; }
+  function sync() {
+    var login = mode() === "login";
+    lbl.textContent = login ? "Don’t have an account?" : "Already have an account?";
+    lnk.textContent = login ? "Register" : "Log in";
+    document.dispatchEvent(new Event("hris:mode"));
+  }
+  lnk.addEventListener("click", function (e) {
+    e.preventDefault();
+    var t = tabs.querySelector('[data-mode="' + (mode() === "login" ? "register" : "login") + '"]');
+    if (t) t.click();
+  });
+  new MutationObserver(sync).observe(tabs, { subtree: true, attributes: true, attributeFilter: ["aria-pressed"] });
+  tabs.addEventListener("click", function () { setTimeout(sync, 0); });
+  sync();
+})();
+</script>
+
+<script>
+/* ===== OTP step =====
+   Trigger:  window.showOtpStep(email)  or  document.dispatchEvent(new CustomEvent("hris:otp-required",{detail:{email}}))
+   Verify:   define window.hrisVerifyOtp = async (email, code) => ({ ok:true }), otherwise it POSTs to /api/verify-otp.
+   The code must be checked on the SERVER, never in this file. */
+(function () {
+  var authForm = document.getElementById("authForm");
+  var otpForm  = document.getElementById("otpForm");
+  var otpInput = document.getElementById("otp");
+  var otpBtn   = document.getElementById("otpBtn");
+  var otpMsg   = document.getElementById("otpMsg");
+  var otpEmail = document.getElementById("otpEmail");
+  var otpBack  = document.getElementById("otpBack");
+  var email = "";
+
+  function setMsg(text, kind) { otpMsg.className = "msg" + (kind ? " " + kind : ""); otpMsg.textContent = text || ""; }
+
+  window.showOtpStep = function (addr) {
+    email = String(addr || document.getElementById("email").value || "").trim();
+    otpEmail.textContent = email;
+    otpInput.value = "";
+    setMsg("");
+    otpBtn.disabled = false;
+    authForm.hidden = true;
+    otpForm.hidden = false;
+    otpInput.focus();
+  };
+  document.addEventListener("hris:otp-required", function (e) { window.showOtpStep(e.detail && e.detail.email); });
+  otpBack.addEventListener("click", function () { otpForm.hidden = true; authForm.hidden = false; setMsg(""); });
+  otpInput.addEventListener("input", function () { otpInput.value = otpInput.value.replace(/\D/g, "").slice(0, 6); });
+
+  async function verify(addr, code) {
+    if (typeof window.hrisVerifyOtp === "function") return window.hrisVerifyOtp(addr, code);
+    var res = await fetch("/api/verify-otp", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email: addr, code: code })
+    });
+    var data = {};
+    try { data = await res.json(); } catch (_) {}
+    return { ok: res.ok && data.ok !== false, error: data.error };
+  }
+
+  otpForm.addEventListener("submit", async function (e) {
+    e.preventDefault();
+    var code = otpInput.value;
+    if (code.length !== 6) { setMsg("Enter all 6 digits.", "err"); otpInput.focus(); return; }
+    otpBtn.disabled = true;
+    setMsg("Checking code…");
+    try {
+      var out = await verify(email, code);
+      if (!out || !out.ok) throw new Error((out && out.error) || "Wrong code. Check it and try again.");
+      setMsg("Account verified. You can now log in.", "ok");
+      setTimeout(function () {
+        otpForm.hidden = true;
+        authForm.hidden = false;
+        var loginTab = document.querySelector('#modeTabs [data-mode="login"]');
+        if (loginTab) loginTab.click();
+        var emailField = document.getElementById("email");
+        if (emailField) emailField.value = email;
+        var pw = document.getElementById("password");
+        if (pw) { pw.value = ""; pw.focus(); }
+      }, 1200);
+    } catch (err) {
+      setMsg(err.message || "Could not verify. Try again.", "err");
+      otpBtn.disabled = false;
+      otpInput.select();
+    }
+  });
+})();
+</script>
+
+<script>
+/* ===== Form helpers: caps lock hint, password strength, ripple, error shake ===== */
+(function () {
+  var reduce = window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches;
+  var pw = document.getElementById("password"), caps = document.getElementById("capsHint");
+  var box = document.getElementById("strength"), lbl = document.getElementById("strengthLbl");
+  var form = document.getElementById("authForm");
+  var registering = false;
+
+  /* caps lock */
+  ["password", "confirm"].forEach(function (id) {
+    var el = document.getElementById(id);
+    function chk(e) { caps.hidden = !(e.getModifierState && e.getModifierState("CapsLock")); }
+    el.addEventListener("keydown", chk); el.addEventListener("keyup", chk);
+    el.addEventListener("blur", function () { caps.hidden = true; });
+  });
+
+  /* strength meter (register only) */
+  var WORDS = ["Use 8 or more characters", "Weak", "Fair", "Good", "Strong"];
+  function score(v) {
+    if (!v) return 0;
+    var s = 0;
+    if (v.length >= 8) s++;
+    if (/[a-z]/.test(v) && /[A-Z]/.test(v)) s++;
+    if (/\d/.test(v)) s++;
+    if (/[^A-Za-z0-9]/.test(v) || v.length >= 12) s++;
+    return Math.max(1, s);
+  }
+  function showStrength() {
+    var v = pw.value;
+    box.hidden = !(registering && v);
+    var s = score(v);
+    box.dataset.s = s;
+    lbl.textContent = WORDS[s];
+  }
+  pw.addEventListener("input", showStrength);
+  document.addEventListener("hris:mode", function () {
+    var p = document.querySelector('#modeTabs [aria-pressed="true"]');
+    registering = !!(p && p.dataset.mode === "register");
+    showStrength();
+  });
+
+  /* ripple on main buttons */
+  document.querySelectorAll("#submitBtn,#otpBtn").forEach(function (b) {
+    b.addEventListener("click", function (e) {
+      if (reduce) return;
+      var r = b.getBoundingClientRect(), d = Math.max(r.width, r.height);
+      var sp = document.createElement("span");
+      sp.className = "ripple";
+      sp.style.cssText = "width:" + d + "px;height:" + d + "px;left:" + (e.clientX - r.left - d / 2) + "px;top:" + (e.clientY - r.top - d / 2) + "px";
+      b.appendChild(sp);
+      setTimeout(function () { sp.remove(); }, 700);
+    });
+  });
+
+  /* shake the card when an error message appears */
+  function watch(msgId, card) {
+    var m = document.getElementById(msgId);
+    new MutationObserver(function () {
+      if (/\b(err|error)\b/.test(m.className) && m.textContent.trim()) {
+        card.classList.remove("shake"); void card.offsetWidth; card.classList.add("shake");
+        setTimeout(function () { card.classList.remove("shake"); }, 600);
+      }
+    }).observe(m, { attributes: true, childList: true, characterData: true, subtree: true });
+  }
+  watch("msg", form);
+  watch("otpMsg", document.getElementById("otpForm"));
+})();
+</script>
+
+<script>
+/* ===== Chibi: a little person for the selected role (Recruitment / HR) ===== */
+(function () {
+  var pals = { staff: document.getElementById("palStaff"), manager: document.getElementById("palHr") };
+  var tabs = document.getElementById("roleTabs"), current = "staff", first = true;
+
+  function role() {
+    var p = tabs.querySelector('[aria-pressed="true"]');
+    return (p && p.dataset.role) || "staff";
+  }
+  function show(r) {
+    if (!pals[r]) return;
+    Object.keys(pals).forEach(function (k) { pals[k].classList.toggle("on", k === r); });
+    var el = pals[r];
+    el.classList.remove("hop"); void el.offsetWidth; el.classList.add("hop");
+    setTimeout(function () { el.classList.remove("hop"); }, 650);
+  }
+  function sync() {
+    var r = role();
+    if (r === current && !first) return;
+    current = r; first = false;
+    show(r);
+  }
+  new MutationObserver(sync).observe(tabs, { subtree: true, attributes: true, attributeFilter: ["aria-pressed"] });
+  tabs.addEventListener("click", function () { setTimeout(sync, 0); });
+  sync();
+})();
+</script>
+
+<script>
+/* ===== Wallpaper: drifting 201 documents (ID cards, certificates, signed sheets) ===== */
+(function () {
+  var cv = document.getElementById("wall"), ctx = cv.getContext("2d");
+  var reduce = window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches;
+  var W = 0, H = 0, dpr = 1, sheets = [], tx = 0, ty = 0, mx = 0, my = 0, last = 0, acc = "#ef4444", acc2 = "#b91c1c";
+  var R = Math.random;
+
+  function readTheme() {
+    var cs = getComputedStyle(document.documentElement);
+    acc = cs.getPropertyValue("--acc").trim() || acc;
+    acc2 = cs.getPropertyValue("--acc2").trim() || acc2;
+  }
+  function resize() {
+    dpr = Math.min(window.devicePixelRatio || 1, 2);
+    W = window.innerWidth; H = window.innerHeight;
+    cv.width = W * dpr; cv.height = H * dpr;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  }
+  function spawn(s, fresh) {
+    s.x = R() * W;
+    s.y = fresh ? R() * (H + 300) - 100 : H + s.h * 1.4;
+    return s;
+  }
+  function build() {
+    sheets = [];
+    var count = W < 700 ? 9 : 17;
+    for (var i = 0; i < count; i++) {
+      var z = 0.3 + R() * 0.7, kind = Math.floor(R() * 3), w = 60 + z * 78;
+      var h = kind === 1 ? w * 0.64 : w * 1.32;
+      sheets.push(spawn({
+        z: z, kind: kind, w: w, h: h, r: (R() - 0.5) * 0.8, vr: (R() - 0.5) * 0.09,
+        vy: -(7 + z * 15), vx: (R() - 0.5) * 7, st: R()
+      }, true));
+    }
+    sheets.sort(function (a, b) { return a.z - b.z; });
+  }
+  function rr(x, y, w, h, r) {
+    ctx.beginPath();
+    ctx.moveTo(x + r, y); ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r);
+    ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath();
+  }
+  function lines(x, y, w, n, gap, th) {
+    ctx.fillStyle = "#e6dcdd";
+    for (var i = 0; i < n; i++) { rr(x, y + i * gap, w * (i === n - 1 ? 0.6 : 1), th, th / 2); ctx.fill(); }
+  }
+  function squiggle(x, y, w, h) {
+    ctx.beginPath();
+    ctx.moveTo(x, y + h * 0.6);
+    ctx.bezierCurveTo(x + w * 0.15, y - h * 0.2, x + w * 0.25, y + h * 1.3, x + w * 0.45, y + h * 0.4);
+    ctx.bezierCurveTo(x + w * 0.6, y - h * 0.3, x + w * 0.7, y + h * 1.2, x + w, y + h * 0.5);
+    ctx.stroke();
+  }
+  function draw(s) {
+    var w = s.w, h = s.h, z = s.z, x0 = -w / 2, y0 = -h / 2;
+    ctx.save();
+    ctx.translate(s.x + tx * z * 55, s.y + ty * z * 34);
+    ctx.rotate(s.r);
+    var fade = s.st > 0.9 ? 1 : 1;
+    ctx.globalAlpha = 0.16 + z * 0.6;
+    ctx.shadowColor = "rgba(0,0,0,.45)"; ctx.shadowBlur = 26 * z; ctx.shadowOffsetY = 12 * z;
+    ctx.fillStyle = "#fff"; rr(x0, y0, w, h, 5 + z * 4); ctx.fill();
+    ctx.shadowColor = "transparent"; ctx.shadowBlur = 0; ctx.shadowOffsetY = 0;
+
+    ctx.fillStyle = acc; ctx.fillRect(x0, y0, w, h * (s.kind === 1 ? 0.16 : 0.09));
+    var pad = w * 0.1, ph = Math.min(w * 0.3, h * 0.32);
+    if (s.kind === 0) {                       /* certificate / form with photo */
+      var px = x0 + pad, py = y0 + h * 0.17;
+      ctx.fillStyle = "#efe4e5"; rr(px, py, ph, ph * 1.15, 4); ctx.fill();
+      ctx.fillStyle = "#cdb9bb"; ctx.beginPath(); ctx.arc(px + ph / 2, py + ph * 0.45, ph * 0.2, 0, 6.3); ctx.fill();
+      ctx.beginPath(); ctx.ellipse(px + ph / 2, py + ph * 1.05, ph * 0.36, ph * 0.28, 0, Math.PI, 0); ctx.fill();
+      lines(px + ph + pad * 0.7, py + 3, w - ph - pad * 2.7, 4, h * 0.062, h * 0.026);
+      lines(x0 + pad, y0 + h * 0.5, w - pad * 2, 5, h * 0.07, h * 0.026);
+      ctx.strokeStyle = acc2; ctx.lineWidth = 1.4 + z; ctx.lineCap = "round";
+      squiggle(x0 + pad, y0 + h * 0.86, w * 0.42, h * 0.07);
+    } else if (s.kind === 1) {                /* ID card */
+      var px2 = x0 + pad, py2 = y0 + h * 0.3;
+      ctx.fillStyle = "#efe4e5"; rr(px2, py2, w * 0.28, h * 0.55, 4); ctx.fill();
+      ctx.fillStyle = "#cdb9bb"; ctx.beginPath(); ctx.arc(px2 + w * 0.14, py2 + h * 0.22, h * 0.1, 0, 6.3); ctx.fill();
+      lines(px2 + w * 0.34, py2 + 2, w * 0.5, 4, h * 0.13, h * 0.055);
+    } else {                                  /* signature sheet */
+      lines(x0 + pad, y0 + h * 0.16, w - pad * 2, 6, h * 0.075, h * 0.026);
+      ctx.strokeStyle = acc2; ctx.lineWidth = 1.6 + z * 1.2; ctx.lineCap = "round";
+      squiggle(x0 + pad, y0 + h * 0.72, w * 0.6, h * 0.1);
+      ctx.strokeStyle = "#d9cdce"; ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.moveTo(x0 + pad, y0 + h * 0.86); ctx.lineTo(x0 + w * 0.75, y0 + h * 0.86); ctx.stroke();
+    }
+
+    /* approved stamp pops in, then fades */
+    if (s.st > 0.6 && s.st < 0.97) {
+      var p = Math.min(1, (s.st - 0.6) / 0.08), out = s.st > 0.9 ? (0.97 - s.st) / 0.07 : 1;
+      var e = 1 - Math.pow(1 - p, 3), rad = Math.min(w, h) * 0.17 * (0.4 + 0.6 * e);
+      ctx.globalAlpha = (0.16 + z * 0.6) * out;
+      ctx.fillStyle = "#22c55e"; ctx.beginPath(); ctx.arc(x0 + w * 0.78, y0 + h * 0.8, rad, 0, 6.3); ctx.fill();
+      ctx.strokeStyle = "#fff"; ctx.lineWidth = Math.max(1.5, rad * 0.22); ctx.lineCap = "round"; ctx.lineJoin = "round";
+      ctx.beginPath(); ctx.moveTo(x0 + w * 0.78 - rad * 0.45, y0 + h * 0.8); ctx.lineTo(x0 + w * 0.78 - rad * 0.1, y0 + h * 0.8 + rad * 0.35); ctx.lineTo(x0 + w * 0.78 + rad * 0.5, y0 + h * 0.8 - rad * 0.35); ctx.stroke();
+    }
+    ctx.restore();
+  }
+  function frame(t) {
+    var dt = Math.min(0.05, (t - last) / 1000 || 0); last = t;
+    tx += (mx - tx) * 0.05; ty += (my - ty) * 0.05;
+    ctx.clearRect(0, 0, W, H);
+    for (var i = 0; i < sheets.length; i++) {
+      var s = sheets[i];
+      s.x += s.vx * dt; s.y += s.vy * dt; s.r += s.vr * dt; s.st += dt * 0.07;
+      if (s.st >= 1) s.st = 0;
+      if (s.y < -s.h * 1.6 || s.x < -s.w * 2 || s.x > W + s.w * 2) { spawn(s, false); }
+      draw(s);
+    }
+  }
+  var raf = 0;
+  function loop(t) { frame(t); raf = requestAnimationFrame(loop); }
+
+  resize(); readTheme(); build();
+  if (reduce) { for (var k = 0; k < sheets.length; k++) sheets[k].st = 0.7; frame(0); }
+  else raf = requestAnimationFrame(loop);
+
+  window.addEventListener("resize", function () { resize(); build(); if (reduce) frame(0); });
+  document.addEventListener("hris:theme", function () { readTheme(); if (reduce) frame(0); });
+  document.addEventListener("visibilitychange", function () {
+    if (reduce) return;
+    if (document.hidden) cancelAnimationFrame(raf); else { last = performance.now(); raf = requestAnimationFrame(loop); }
+  });
+  if (!reduce && window.matchMedia("(pointer: fine)").matches) {
+    document.addEventListener("mousemove", function (e) {
+      mx = e.clientX / W - 0.5; my = e.clientY / H - 0.5;
+    });
+  }
+})();
+</script>
+<script type="module" src="shared/auth.js"></script>
+</body>
+</html>

@@ -1,0 +1,2074 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title> | HRIS</title>
+  <link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../shared/dashboard.css">
+  <style>
+/* red and white theme */
+body[data-role="staff"]{--bg:#fff;--surface:#fff;--ink:#2a1215;--muted:#7a5b5f;--line:#f0d4d6;--accent:#b91c1c;--accent-ink:#fff;--err:#b42318;--ok:#067647;--warn:#9a6700;background:linear-gradient(180deg,#fff 0%,#fdeaea 100%) fixed}
+main{max-width:1100px}
+.banner{display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap;padding:22px 28px;border-radius:16px;color:#fff;background:linear-gradient(120deg,#7f1d1d 0%,#b91c1c 55%,#ef4444 100%)}
+.brandbox{display:flex;align-items:center;gap:16px}
+.logo{width:48px;height:48px;border-radius:12px;background:rgba(255,255,255,.18);display:grid;place-items:center;font-weight:800}
+.banner h1{margin:0;font-size:1.3rem;letter-spacing:.04em}
+.banner .who{color:#fff}
+.banner .who button{background:rgba(255,255,255,.15);color:#fff;border-color:rgba(255,255,255,.45)}
+.sec{margin:32px 0 2px;font-size:1.2rem;letter-spacing:.03em;color:#991b1b}
+.secsub{margin:0 0 16px;color:var(--muted);font-size:.9rem}
+
+/* ===== Application cards ===== */
+.apps{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
+.app{
+  --mx:50%;--my:50%;
+  position:relative;isolation:isolate;overflow:hidden;
+  display:flex;flex-direction:column;justify-content:space-between;gap:20px;
+  min-height:160px;width:100%;padding:18px;
+  border:1px solid var(--line);border-radius:16px;background:var(--surface);
+  text-align:left;font:inherit;color:inherit;cursor:pointer;
+  transition:transform .25s cubic-bezier(.2,.8,.2,1),box-shadow .25s,border-color .25s;
+  animation:cardIn .6s cubic-bezier(.2,.8,.2,1) backwards;
+  animation-delay:calc(var(--i) * 70ms);
+}
+@keyframes cardIn{from{opacity:0;transform:translateY(22px) scale(.96)}}
+.app::before{content:"";position:absolute;inset:0;z-index:-1;opacity:0;transition:opacity .3s;
+  background:radial-gradient(260px circle at var(--mx) var(--my),rgba(239,68,68,.16),transparent 70%)}
+.app::after{content:"";position:absolute;left:0;right:0;top:0;height:3px;
+  background:linear-gradient(90deg,#7f1d1d,#ef4444);transform:scaleX(0);transform-origin:left;transition:transform .35s}
+.app:hover,.app:focus-visible{transform:translateY(-6px);border-color:var(--accent);box-shadow:0 14px 30px rgba(185,28,28,.18);outline:none}
+.app:hover::before,.app:focus-visible::before{opacity:1}
+.app:hover::after,.app:focus-visible::after{transform:scaleX(1)}
+.app:active{transform:translateY(-2px) scale(.98)}
+.app .top{display:flex;gap:12px;align-items:flex-start}
+.app .ico{flex:none;width:42px;height:42px;border-radius:12px;background:#fee2e2;color:var(--accent);display:grid;place-items:center;transition:transform .35s cubic-bezier(.3,1.5,.5,1),background .25s,color .25s}
+.app:hover .ico,.app:focus-visible .ico{transform:rotate(-8deg) scale(1.12);background:var(--accent);color:#fff}
+.app .n{font-size:.66rem;letter-spacing:.1em;font-weight:700;color:var(--muted)}
+.app strong{display:block;margin-top:2px;font-size:1rem;line-height:1.3}
+.app .go{display:flex;align-items:center;gap:8px;font-size:.7rem;font-weight:700;letter-spacing:.08em;color:var(--accent)}
+.app .go i{font-style:normal;transition:transform .25s}
+.app:hover .go i{transform:translateX(6px)}
+.app .live{flex:none;width:8px;height:8px;border-radius:50%;background:#22c55e;animation:pulse 1.6s infinite}
+@keyframes pulse{0%{box-shadow:0 0 0 0 rgba(34,197,94,.6)}70%,100%{box-shadow:0 0 0 8px rgba(34,197,94,0)}}
+@keyframes pop{from{opacity:0;transform:scale(.4)}}
+
+/* coming soon cards */
+.app.soon{background:rgba(255,255,255,.6)}
+.app.soon .ico{background:#f5eaea;color:#b9a3a6}
+.app.soon:hover,.app.soon:focus-visible{border-color:var(--line);box-shadow:0 8px 18px rgba(0,0,0,.06);transform:translateY(-3px)}
+.app.soon:hover .ico,.app.soon:focus-visible .ico{background:#f5eaea;color:#b9a3a6;transform:rotate(8deg)}
+.app.soon::after,.app.soon::before{display:none}
+.app.soon .n,.app.soon strong{opacity:.75}
+.app.soon .go{color:var(--muted)}
+.app.soon.shake{animation:shake .4s}
+@keyframes shake{25%{transform:translateX(-5px)}50%{transform:translateX(5px)}75%{transform:translateX(-3px)}}
+
+/* toast */
+.toast{position:fixed;left:50%;bottom:28px;z-index:99;padding:12px 20px;border-radius:999px;background:#2a1215;color:#fff;font-weight:600;font-size:.9rem;box-shadow:0 10px 30px rgba(0,0,0,.3);transform:translate(-50%,30px);opacity:0;pointer-events:none;transition:transform .3s,opacity .3s}
+.toast.show{transform:translate(-50%,0);opacity:1}
+
+/* shared text helpers */
+.sub{color:var(--muted);font-size:.8rem}
+.warn{color:var(--warn);font-weight:600}.ok{color:var(--ok)}.err{color:var(--err)}
+.btns{display:flex;gap:8px;flex-wrap:wrap}
+.btns button{padding:6px 12px;font-size:.85rem;white-space:nowrap}
+.st{font-size:.85rem;min-height:1.2em;margin-top:8px;color:var(--muted)}
+.st.ok{color:var(--ok)}.st.err{color:var(--err)}
+.missing{margin:14px 0 0;font-size:.9rem;font-weight:600;color:var(--warn)}.missing.done{color:var(--ok)}
+dialog{width:calc(100% - 32px);max-width:680px;max-height:90vh;padding:24px;border:1px solid var(--line);border-radius:12px;background:var(--surface);color:var(--ink)}
+dialog::backdrop{background:rgba(40,10,12,.55)}
+.actions{display:flex;gap:12px;justify-content:flex-end;margin-top:20px}
+.actions button.primary{width:auto;margin:0;padding:9px 16px}
+@media(max-width:900px){.apps{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:520px){.apps{grid-template-columns:1fr}}
+
+/* Status pill (used in the review step) */
+.pill{display:inline-flex;align-items:center;gap:6px;padding:4px 12px;border-radius:999px;font-size:.72rem;font-weight:800;letter-spacing:.06em;text-transform:uppercase;white-space:nowrap}
+.pill::before{content:"";width:7px;height:7px;border-radius:50%;background:currentColor}
+.pill.pending{background:#fef3c7;color:#92400e;border:1px solid #fcd34d}
+.pill.complete{background:#dbeafe;color:#1e40af;border:1px solid #93c5fd}
+
+/* ===== Add 201 pop-up ===== */
+#dlg,#dlg:focus,#dlg:focus-visible{outline:none}
+#dlg{width:calc(100% - 32px);max-width:720px;max-height:92vh;padding:0;border:0;border-radius:18px;background:#fff;color:#2a1215;box-shadow:0 24px 60px rgba(60,8,10,.35);overflow:hidden}
+#dlg::backdrop{background:rgba(40,10,12,.55)}
+#dlg form{max-height:92vh;overflow-y:auto;padding:0 30px 26px;display:grid;gap:4px}
+.dlg-head{position:sticky;top:0;z-index:2;margin:0 -30px 8px;padding:20px 30px 16px;color:#fff;background:linear-gradient(120deg,#7f1d1d 0%,#b91c1c 55%,#ef4444 100%)}
+#dlg h2{margin:0 0 14px;font-size:1.25rem;letter-spacing:.03em;color:#fff}
+
+.steps{display:flex;gap:8px;list-style:none;margin:0;padding:0}
+.steps li{flex:1;display:flex;align-items:center;gap:8px;min-width:0;font-size:.72rem;font-weight:700;letter-spacing:.04em;color:rgba(255,255,255,.7)}
+.steps .num{flex:none;display:grid;place-items:center;width:24px;height:24px;border-radius:50%;background:rgba(255,255,255,.22);font-size:.75rem;color:#fff}
+.steps .lbl{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.steps li.on{color:#fff}
+.steps li.on .num,.steps li.done .num{background:#fff;color:#b91c1c}
+.bar{height:4px;margin-top:12px;border-radius:4px;background:rgba(255,255,255,.28)}
+.bar i{display:block;height:100%;width:25%;border-radius:4px;background:#fff;transition:width .25s}
+
+#dlg [hidden]{display:none!important}
+#dlg .step{display:grid;gap:4px}
+#dlg .review{margin-top:6px;padding:16px 18px;border:1px solid #f0d4d6;border-radius:14px;background:#fff7f7}
+#dlg .rv-top{display:flex;justify-content:space-between;align-items:center;gap:12px}
+#dlg .rv-name{font-weight:800;font-size:1.1rem;color:#2a1215}
+#dlg .rv-dl{display:grid;grid-template-columns:90px 1fr;gap:6px 12px;margin:14px 0 4px}
+#dlg .rv-dl dt{color:#7a5b5f;font-size:.8rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em}
+#dlg .rv-dl dd{margin:0;word-break:break-word}
+#dlg .rv-h{margin:16px 0 10px;font-size:.78rem;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:#991b1b}
+#dlg .pvlist{display:grid;grid-template-columns:1fr 1fr;gap:10px;list-style:none;margin:0;padding:0}
+#dlg .pv{display:flex;align-items:center;gap:12px;padding:8px;border:1px solid #f0d4d6;border-radius:12px;background:#fff;min-width:0}
+#dlg .pv.miss{border-style:dashed;background:transparent}
+#dlg .thumb{flex:none;display:grid;place-items:center;width:60px;height:60px;border-radius:8px;overflow:hidden;background:#fdeaea;color:#b9a3a6;font-weight:800;text-decoration:none}
+#dlg .thumb img{width:100%;height:100%;object-fit:cover;display:block}
+#dlg .thumb .pdf{color:#b91c1c;font-size:.8rem;letter-spacing:.06em}
+#dlg .pv-info{display:flex;flex-direction:column;gap:2px;min-width:0;font-size:.88rem}
+#dlg .pv-info .sub{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#dlg .pill.complete{background:#dcfce7;color:#166534;border:1px solid #86efac}
+#dlg #cancelBtn{margin-right:auto}
+#dlg label{display:block;margin:12px 0 5px;font-size:.76rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#7a5b5f}
+#dlg input:not([type=file]),#dlg textarea{width:100%;box-sizing:border-box;padding:11px 14px;font:inherit;color:#2a1215;background:#fff;border:1px solid #f0d4d6;border-radius:10px;outline:none;transition:border-color .15s, box-shadow .15s}
+#dlg input::placeholder,#dlg textarea::placeholder{color:#b9a3a6}
+#dlg input:not([type=file]):focus,#dlg textarea:focus{border-color:#b91c1c;box-shadow:0 0 0 3px rgba(185,28,28,.15)}
+#dlg textarea{min-height:84px;resize:vertical}
+#dlg .row{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+#dlg fieldset{margin:16px 0 4px;padding:14px 18px 8px;border:1px solid #f0d4d6;border-radius:14px;background:#fff7f7}
+#dlg legend{padding:0 10px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;font-size:.78rem;color:#991b1b}
+#dlg .hint{margin:0 0 4px;font-size:.82rem;color:#7a5b5f}
+#dlg .st{margin:4px 0 0;font-size:.8rem;color:var(--muted)}
+#dlg .st.ok{color:var(--ok)}
+#dlg .st.err,#dlg .msg.err{color:var(--err);font-weight:600}
+#dlg .msg.ok{color:var(--ok)}
+#dlg .missing{margin:14px 0 0;color:var(--warn)}
+#dlg .missing.done{color:var(--ok)}
+#dlg .actions{margin-top:18px;gap:12px}
+#dlg .actions button{padding:11px 22px;border-radius:10px;font-weight:700;cursor:pointer;border:1px solid #f0d4d6;background:#fff;color:#7a5b5f;transition:background .15s}
+#dlg .actions button:hover{background:#fdeaea}
+#dlg .actions button.primary{width:auto;background:linear-gradient(120deg,#ef4444,#b91c1c);border-color:transparent;color:#fff;box-shadow:0 6px 16px rgba(185,28,28,.3)}
+#dlg .actions button.primary:hover{filter:brightness(1.08)}
+#dlg .actions button:disabled{opacity:.6;cursor:not-allowed}
+#dlg form::-webkit-scrollbar{width:8px}
+#dlg form::-webkit-scrollbar-thumb{background:#e8b4b8;border-radius:8px}
+
+@media(max-width:520px){
+  #dlg .row{grid-template-columns:1fr}
+  #dlg form{padding:0 18px 20px}
+  .dlg-head{margin:0 -18px 8px;padding:16px 18px 14px}
+  #dlg .pvlist{grid-template-columns:1fr}
+}
+#dlg select{width:100%;box-sizing:border-box;padding:11px 14px;font:inherit;color:#2a1215;background:#fff;border:1px solid #f0d4d6;border-radius:10px}
+#dlg select:focus{border-color:#b91c1c;box-shadow:0 0 0 3px rgba(185,28,28,.15);outline:none}
+#dlg select:disabled,#dlg input:read-only{background:#f7eeee;color:#7a5b5f}
+#dlg .step h3{margin:6px 0 0;font-size:1rem;color:#991b1b}
+#dlg .slot{margin:0 0 14px;padding-bottom:12px;border-bottom:1px dashed #f0d4d6}
+#dlg .slot:last-child{border:0}
+#dlg .slot .btns{margin-top:2px}
+#dlg .slot button{padding:8px 14px;border-radius:10px;border:1px solid #e8b4b8;background:#fff;color:#b91c1c;font-weight:700;cursor:pointer}
+#dlg .slot button:hover{background:#fdeaea}
+.steps .lbl{display:none}.steps li.on .lbl{display:inline}
+#dlg .sigprev{display:block;max-width:240px;max-height:90px;margin-top:8px;border:1px solid #f0d4d6;border-radius:8px;background:repeating-conic-gradient(#eee 0 25%,#fff 0 50%) 0 0/14px 14px}
+.sigcv{display:block;width:100%;height:auto;aspect-ratio:3/1;border:1px solid #e8b4b8;border-radius:10px;background:linear-gradient(to bottom,transparent calc(100% - 40px),#d9c4c6 calc(100% - 40px),#d9c4c6 calc(100% - 39px),transparent calc(100% - 39px)),#fff;touch-action:none;cursor:crosshair}
+
+/* ===== FORM + BUTTON ANIMATIONS ===== */
+dialog[open]{animation:dlgIn .38s cubic-bezier(.2,.9,.3,1.15)}
+dialog[open]::backdrop{animation:fadeIn .3s both;backdrop-filter:blur(3px)}
+dialog.closing{animation:dlgOut .2s ease forwards}
+dialog.closing::backdrop{animation:fadeOut .2s forwards}
+@keyframes dlgIn{from{opacity:0;transform:translateY(30px) scale(.94)}}
+@keyframes dlgOut{to{opacity:0;transform:translateY(16px) scale(.97)}}
+@keyframes fadeIn{from{opacity:0}}
+@keyframes fadeOut{to{opacity:0}}
+
+#dlg .step.in-fwd{--dx:26px}
+#dlg .step.in-back{--dx:-26px}
+#dlg .step.in-fwd>*,#dlg .step.in-back>*{animation:fieldIn .45s cubic-bezier(.2,.8,.2,1) backwards;animation-delay:calc(var(--d,0) * 45ms)}
+@keyframes fieldIn{from{opacity:0;transform:translateX(var(--dx,0px)) translateY(10px)}}
+
+.bar i{position:relative;overflow:hidden;transition:width .45s cubic-bezier(.2,.8,.2,1)}
+.bar i::after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,transparent,rgba(239,68,68,.55),transparent);transform:translateX(-100%);animation:shimmer 1.8s infinite}
+@keyframes shimmer{to{transform:translateX(100%)}}
+.steps .num{transition:background .25s,color .25s}
+.steps li.on .num{animation:ring 1.8s infinite}
+.steps li.done .num{animation:pop .4s cubic-bezier(.3,1.6,.5,1)}
+@keyframes ring{0%{box-shadow:0 0 0 0 rgba(255,255,255,.6)}70%,100%{box-shadow:0 0 0 8px rgba(255,255,255,0)}}
+
+#dlg label{transition:color .2s}
+#dlg div:focus-within>label{color:#b91c1c}
+#dlg input:not([type=file]),#dlg textarea,#dlg select{transition:border-color .2s,box-shadow .2s,transform .2s,background .2s}
+#dlg input:not([type=file]):focus,#dlg textarea:focus,#dlg select:focus{transform:translateY(-1px)}
+#dlg input:not([type=file]):not(:focus):not(:placeholder-shown):valid{border-color:#86efac}
+.shake-x{animation:shakeX .4s}
+@keyframes shakeX{20%{transform:translateX(-7px)}40%{transform:translateX(6px)}60%{transform:translateX(-4px)}80%{transform:translateX(3px)}}
+
+#dlg .st.ok{animation:pop .35s cubic-bezier(.3,1.6,.5,1);transform-origin:left}
+#dlg .st.err{animation:shakeX .4s}
+#dlg .sigprev:not([hidden]){animation:fadeIn .4s}
+#dlg .slot button{transition:background .2s,transform .2s,box-shadow .2s}
+#dlg .slot button:hover{transform:translateY(-2px);box-shadow:0 6px 14px rgba(185,28,28,.15)}
+#dlg .review{animation:fadeIn .4s}
+#dlg .rv-h,#dlg .pv{animation:fieldIn .4s cubic-bezier(.2,.8,.2,1) backwards}
+#dlg .pv:nth-child(1){animation-delay:.05s}#dlg .pv:nth-child(2){animation-delay:.1s}#dlg .pv:nth-child(3){animation-delay:.15s}#dlg .pv:nth-child(4){animation-delay:.2s}
+#dlg .pv:nth-child(5){animation-delay:.25s}#dlg .pv:nth-child(6){animation-delay:.3s}#dlg .pv:nth-child(7){animation-delay:.35s}#dlg .pv:nth-child(8){animation-delay:.4s}
+#dlg .pv{transition:transform .2s,box-shadow .2s}
+#dlg .pv:hover{transform:translateY(-2px);box-shadow:0 6px 14px rgba(185,28,28,.12)}
+
+/* buttons: lift, shine, press, ripple */
+#dlg button{position:relative;overflow:hidden;transition:transform .2s,box-shadow .2s,background .2s,filter .2s}
+#dlg .actions button:hover{transform:translateY(-2px)}
+#dlg button:active{transform:translateY(0) scale(.96)}
+#dlg .actions button.primary::after{content:"";position:absolute;top:0;left:-70%;width:50%;height:100%;background:linear-gradient(100deg,transparent,rgba(255,255,255,.45),transparent);transform:skewX(-20deg);transition:left .6s}
+#dlg .actions button.primary:hover::after{left:130%}
+.ripple{position:absolute;border-radius:50%;background:currentColor;opacity:.25;transform:scale(0);animation:rip .6s ease-out forwards;pointer-events:none}
+@keyframes rip{to{transform:scale(1);opacity:0}}
+#nextBtn{animation:nudge 2.4s ease-in-out infinite}
+#nextBtn:hover{animation:none}
+@keyframes nudge{0%,88%,100%{transform:translateX(0)}94%{transform:translateX(4px)}}
+
+/* SUBMIT button states: loading spinner, success check */
+button.primary.loading,button.primary.success{pointer-events:none}
+#dlg button.primary.loading,#dlg button.primary.success{color:transparent;opacity:1}
+#dlg button.primary.loading:disabled{opacity:1}
+button.primary.loading::before{content:"";position:absolute;left:50%;top:50%;width:18px;height:18px;margin:-9px 0 0 -9px;border:3px solid rgba(255,255,255,.4);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+#dlg button.primary.success{background:linear-gradient(120deg,#22c55e,#15803d);box-shadow:0 6px 16px rgba(21,128,61,.4);animation:successPulse .6s}
+button.primary.success::before{content:"\2713";position:absolute;inset:0;display:grid;place-items:center;color:#fff;font-size:1.3rem;font-weight:800;animation:pop .45s cubic-bezier(.3,1.8,.5,1)}
+@keyframes successPulse{0%{box-shadow:0 0 0 0 rgba(34,197,94,.6)}100%{box-shadow:0 0 0 18px rgba(34,197,94,0)}}
+
+@media (prefers-reduced-motion:reduce){
+  .app,.app .live{animation:none!important}
+  .app,.app *{transition:none!important}
+  dialog,dialog::backdrop,#dlg .step>*,#dlg .pv,#dlg .rv-h,#dlg .st,.steps .num,.bar i::after,#nextBtn{animation:none!important}
+  #dlg *{transition:none!important}
+}
+  </style>
+</head>
+
+<body data-role="staff">
+  <main>
+    <div class="banner">
+      <div class="brandbox">
+        <div class="logo">HR</div>
+        <div>
+          <h1 id="pageTitle">HR CONNECT SUBMISSION</h1>
+        </div>
+      </div>
+      <div class="who">
+        <span>Welcome, <strong id="welcomeName"></strong></span>
+        <span id="userName" hidden></span>
+        <button id="logoutBtn" type="button">Log out</button>
+      </div>
+    </div>
+
+    <!-- Home: applications -->
+    <h2 class="sec">HR CONNECT SUBMISSION</h2>
+    <p class="secsub">Human Resources Applications &amp; Digital Services</p>
+    <div class="apps" id="apps"></div>
+  </main>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <input type="file" id="camIn" accept="image/*" capture hidden>
+  <input type="file" id="upIn" accept=".pdf,.jpg,.jpeg,.png" hidden>
+
+  <!-- Add 201 pop-up (9 steps) -->
+  <dialog id="dlg" aria-labelledby="dlgTitle">
+    <form id="reqForm" novalidate>
+      <div class="dlg-head">
+        <h2 id="dlgTitle">New 201 file</h2>
+        <ol class="steps" id="steps" aria-label="Form steps"></ol>
+        <div class="bar"><i id="bar"></i></div>
+      </div>
+      <div id="stepsBox"></div>
+      <div class="actions">
+        <button type="button" id="cancelBtn">Cancel</button>
+        <button type="button" id="prevBtn" hidden>Back</button>
+        <button type="button" class="primary" id="nextBtn">Next</button>
+        <button class="primary" id="saveBtn" type="submit" hidden>Submit</button>
+      </div>
+    </form>
+  </dialog>
+
+  <script type="module">
+import { guard, auth } from "../shared/guard.js";
+import { API_URL } from "../shared/firebase-config.js";
+
+/* ---------- Client / Department data (by Company) ---------- */
+// Prestige, Regcris and Tmarks are filled in. Add CoMerch here when you have its list.
+const CLIENTS = {
+  Prestige: [
+    ["BACH",  "BACH - Bayer Philippines Inc."],
+    ["COFO",  "COFO - Commonwealth Foods, Inc."],
+    ["JER",   "JER - Jeron Distribution Group Inc."],
+    ["JERO",  "JERO - Jeron Distribution Group Inc."],
+    ["MRCOP", "MRCOP - Multirich Foods Corporation"],
+    ["REBIP", "REBIP - Republic Biscuit Corporation"],
+    ["SUSAP", "SUSAP - Suncrest Foods Incorporated"],
+    ["SUSIP", "SUSIP - Suncrest Foods Incorporated"]
+  ],
+  Regcris: [
+    ["MGEN", "MGEN - 2 Way Synergy (Mega-Epi)"],
+    ["EVER", "EVER - Energizer Philippines Inc"],
+    ["BMEG", "BMEG - Mega Fishing Corporation"],
+    ["MRCO", "MRCO - Multirich Foods Corporation"],
+    ["MFIC", "MFIC - Multirich Foods Incorporated"],
+    ["RNUT", "RNUT - Nutritive Snack Food Corp."],
+    ["RGFVI", "RGFVI - Rebisco Global Food Ventures Incorporated"],
+    ["REBI", "REBI - Republic Biscuit Corporation"],
+    ["SUSA", "SUSA - Suncrest Foods Incorporated"],
+    ["SUSI", "SUSI - Suncrest Foods Incorporated"],
+    ["UNFS", "UNFS - Unilever Food Solution"],
+    ["UASL", "UASL - Unilever Philippines Inc."],
+    ["UNIF", "UNIF - Unilever Philippines Inc."],
+    ["UNIG", "UNIG - Unilever Philippines Inc."],
+    ["UNIM", "UNIM - Unilever Philippines Inc."],
+    ["UNIR", "UNIR - Unilever Philippines Inc."],
+    ["UNIL", "UNIL - Unilever Rfm Ice Cream Inc."],
+    ["UACS", "UACS - Uniliver Activation"]
+  ],
+  Tmarks: [
+    ["2WAL", "2WAL - 2W Cash& Carry Froneri/Energizer"],
+    ["2AFAF", "2AFAF - 2Way Alaska And Froneri Alfamart"],
+    ["2AFLM", "2AFLM - 2Way Alaska And Froneri Landmark"],
+    ["2MZE", "2MZE - 2Way Mega Zesto"],
+    ["2RZA", "2RZA - 2Way Robinsions Ajinomoto Zesto"],
+    ["2SZA", "2SZA - 2Way Sm Ajinomoto And Zesto"],
+    ["2AFR", "2AFR - 2Way Svi Smco Alaska And Froneri"],
+    ["AJCF", "AJCF - 2Way Synergy Ajinomoto Comfoods"],
+    ["3AFE", "3AFE - 3Way Alaska Froneri And Energizer"],
+    ["3FZE", "3FZE - 3Way Mdc Froneri/Zesto/Epi"],
+    ["3FEM", "3FEM - 3Way Nka Froneri-Epi-Mega"],
+    ["3FPE", "3FPE - 3Way Robinsons Froneri-Perfetti-Epi"],
+    ["3ZAC", "3ZAC - 3Way Robinsons Zesto/Ajinomoto/Comfoods"],
+    ["AJIN", "AJIN - Ajinomoto Philippines Corporation"],
+    ["AMCP", "AMCP - Alaska Milk Corporation Philippines"],
+    ["BASF", "BASF - Basf Philippines, Inc."],
+    ["FRON", "FRON - Froneri Philippines Inc."],
+    ["KMEX", "KMEX - Mckenzie Distribution Co., Inc."],
+    ["PVMP", "PVMP - Perfetti Van Melle Philippines Inc"],
+    ["TARGET", "TARGET - Targetline Marketing Corporation"],
+    ["ZSTO", "ZSTO - Zesto Corporation"]
+  ]
+};
+
+// one line per department: "CODE – NAME"  (keyed by Client Code)
+const DEPTS_RAW = {
+  BACH: `BBAC – BAYER MERCHANDISER BACOLOD
+BBLR – BAYER MERCHANDISERS GMA
+BCDO – BAYER MERCHANDISER CDO
+BCEB – BAYER MERCHANDISER CEBU
+BCLU – BAYER MERCHANDISER CENTRAL LUZON
+BDAV – BAYER MERCHANDISER DAVAO
+BILO – BAYER MERCHANDISER ILO-ILO
+BNCR – BAYER MERCHANDISERS GMA
+BNLU – BAYER MERCHANDISER NORTH LUZON
+BSLU – BAYER MERCHANDISER SOUTH LUZON
+ENCO – BAYER DATA ASSISTANT ENCODER
+FTCD – BAYER COORDINATOR DAVAO
+FTCE – BAYER COORDINATOR CEBU
+FTCG – BAYER COORDINATORS GMA
+FTCG1 – BAYER SENIOR COOR GMA
+FTCG2 – BAYER COOR GMA
+FTCG3 – BAYER COORDINATOR GMA
+FTCL – BAYER COORDINATOR CENTRAL LUZON
+FTCM – BAYER COORDINATOR MDC
+FTCN – BAYER COORDINATOR NORTH LUZON
+FTCS – BAYER COORDINATOR SOUTH LUZON
+SUPE – BAYER SUPERVISOR NATIONWIDE`,
+
+  COFO: `CFCG – COMFOODS COORDINATOR GMA
+CFCL – COMFOODS CENTRAL LUZON
+CGMA – COMFOODS GMA`,
+
+  JER: `BATA – BATANGAS MERCHANDISERS
+BICO – BICOL MERCHANDISERS
+CAVI – CAVITE MERCHANDISERS
+CENT – CENTRAL LUZON MERCHANDISERS
+ISAB – ISABELA/TUGUEGARRAO MERCHANDISERS
+LAGU – LAGUNA MERCHANDISERS
+LUCE – LUCENA MERCHANDISERS
+MIND – MINDORO MERCHANDISERS
+NORT – NORTH LUZON MERCHANDISERS`,
+
+  JERO: `BACO – JERON BACOLOD MERCHANDISERS
+CAGA – JERON CAGAYAN DE ORO MERCHANDISERS
+CEBU – JERON CEBU MERCHANDISERS
+DAVA – JERON DAVAO MERCHANDISERS
+FTCD – JERON DAVAO FTC
+FTCE – JERON CEBU FTC
+FTCG – JERON GMA FTC
+FTCN – JERON FTC NORTH GMA
+FTCS – JERON FTC SOUTH GMA
+GENE – JERON GENERAL SANTOS MERCHANDISERS
+GMA1 – JERON NORTH GMA MERCHANDISER c/o Antonette
+GMA2 – JERON SOUTH GMA MERCHANDISERS c/o Pacifico
+ILO. – JERON ILO-ILO MERCHANDISERS
+ZAMB – JERON ZAMBOANGA MERCHANDISERS`,
+
+  MRCOP: `MBAO – DAG BICOL - AURORA O.
+MBIC – BICOL
+MBMM – DAG BICOL - MARK M.
+MCAM – DAG COMP CITIES - AERRESS M.
+MCCS – COMPONENT CITIES
+MCES – DAG COMP CITIES - ERICKA S.
+MCJC – DAG COMP CITIES - JOMAR C.
+MCMH – DAG COMP CITIES - MACKY H.
+MEGA – EMERGING GROWTH AREA
+MFCM – FIRST CLASS MUNICIPALITIES
+MFEB – DAG FIRST CLASS - ERIC B.
+MFJB – DAG FIRST CLASS - JOHN B.
+MFJO – DAG FIRST CLASS - JOLITO O.
+MFTP – DAG FIRST CLASS - TEODORO P.
+MGCA – GROWTH CORRIDOR AREA
+MGEB – DAG EMERGING GA - ERIC B.
+MGJB – DAG EMERGING GA - JOHN B.
+MGJC – DAG EMERGING GA - JOMAR C.
+MGMA – MULTIRICH GMA MERCHANDISERS
+MKBCA – KAG BICOL - CYRENE A.
+MKBEL – KAG BICOL - ELVIE L.
+MKBIC – KAG - BICOL AREA
+MKBTV – KAG BICOL - TESZA V.
+MKCBA – KAG COMP CITIES - BONG A.
+MKCCS – KAG - COMPONENT CITIES
+MKCGC – KAG COMP CITIES - GERALDINE C.
+MKCJC – KAG COMP CITIES - JOSEPH C.
+MKFBA – KAG - FIRST CLASS - BONG A.
+MKFCM – KAG - FIRST CLASS MUNICIPALITIES
+MKFCY – KAG FIRST CLASS - CHRISTOPHER Y.
+MKFDC – KAG FIRST CLASS - DANDRE C.
+MKFJB – KAG FIRST CLASS - JOY B.
+MKFMW – KAG FIRST CLASS - MHARK W.
+MKFSM – KAG - FOURTH TO SIX CLASS MUNICIPALITIES
+MKGBA – KAG GROWTH CORRIDOR - BONG A.
+MKGCA – KAG - GROWTH CORRIDOR AREA
+MKGCY – KAG GROWTH CORRIDOR - CHRISTOPHER Y.
+MKGJC – KAG GROWTH CORRIDOR - JOSEPH C.
+MKGMW – KAG GROWTH CORRIDOR - MHARK W.
+MKMJB – KAG MINDORO - JOY B.
+MKSBA – KAG - 2ND & 3RD CLASS - BONG A.
+MKSGC – KAG - 2ND & 3RD CLASS - GERALDINE C.
+MKSTM – KAG - SECOND & THIRD CLASS MUNICIPALITIE
+MR4B – MIMAROPA
+MRJB – DAG RESOURCE AREA - JOHN B.
+MRRV – DAG MIMAROPA - REDEN D.`,
+
+  REBIP: `RBIC – BICOL
+RCCS – COMPONENT CITIES
+RFCM – FIRST CLASS MUNICIPALITIES
+RFMS – FMS-SOUTH LUZON
+RGCA – GROWTH CORRIDOR AREA
+RR4B – MIMAROPA
+RSLS – REBISCO SOUTH LUZON SET UPPER
+RTAC – TACTICAL COMMANDO`,
+
+  SUSAP: `SBAO – DAG BICOL - AURORA O.
+SBIB – DAG BICOL - IRISH B.
+SBIC – BICOL
+SBMM – DAG BICOL - MARK M.
+SCAM – DAG COMP CITIES - AERRESS M.
+SCCS – COMPONENT CITIES
+SCES – DAG COMP CITIES - ERICKA S.
+SCJA – DAG GCA - JONATHAN A.
+SCMH – DAG COMP CITIES - MACKY H.
+SEGA – EMERGING GROWTH AREA
+SFAP – DAG FIRST CLASS - ALVIN P.
+SFCM – FIRST CLASS MUNICIPALITIES
+SFEB – DAG FIRST CLASS - ERIC B.
+SFGE – DAG FIRST CLASS - GLENN E.
+SFJA – DAG FIRST CLASS - JONATHAN A.
+SFJB – DAG FIRST CLASS - JOHN B.
+SFJC – DAG FIRST CLASS - JOMAR C.
+SFJE – DAG FIRST CLASS - JOVEN E.
+SFJO – DAG FIRST CLASS - JOLITO O.
+SFTP – DAG FIRST CLASS - TEODORO P.
+SGAM – DAG EGA - AERRESS M.
+SGCA – GROWTH CORRIDOR AREA
+SGEB – DAG EGA - ERIC B.
+SGGE – DAG GCA - GLENN E.
+SGJA – DAG NCR - JONATHAN A.
+SGJB – DAG EGA - JOHN B.
+SGJC – DAG EGA - JOMAR C.
+SGJE – DAG GCA - JOVEN E.
+SGJO – DAG EGA - JOLITO O.
+SGTP – DAG EGA - TEODORO P.
+SNJE – DAG NCR - JOVEN E.
+SR4B – MIMAROPA
+SRAR – DAG MIMAROPA - ALEJANDRA R.
+SRBA – RESOURCE BASE AREA
+SREB – DAG MIMAROPA - ERIC B.
+SRJO – DAG MIMAROPA - JOLITO O.
+SRRD – DAG MIMAROPA - REDEN D.`,
+
+  SUSIP: `ENCO – SPC Encoder
+SAPCDA – APC - DASMA AREA
+SBIC – BICOL
+SCAV – IMUS, CAVITE
+SCCS – COMPONENT CITIES
+SEGA – EMERGING GROWTH AREA
+SFCAPC – LIPA/STO. TOMAS/SAN PABLO/BATANGAS
+SFCM – FIRST CLASS MUNICIPALITIES
+SGCA – GROWTH CORRIDOR AREA
+SGCAPC – SUSI HUBAY NA TUBIG/MOLINO/TOWN CENTER
+SGMAPC – GMA RATE
+SKBCA – KAG BICOL - CYRENE A.
+SKBEL – KAG BICOL - ELVIE L.
+SKBIC – KAG - BICOL AREA
+SKBLN – KAG BICOL - LITO N.
+SKBTV – KAG BICOL - TESZA V.
+SKCBA – KAG COMP CITIES - BONG A.
+SKCCS – KAG - COMPONENT CITIES
+SKCGC – KAG COMP CITIES - GERALDINE C.
+SKCJB – KAG COMP CITIES - JOY B.
+SKCMW – KAG COMP CITIES - MHARK W.
+SKCRP – KAG COMP CITIES - RHOLEN P.
+SKFCM – KAG - FIRST CLASS MUNICIPALITIES
+SKFCY – KAG FIRST CLASS - CHRISTOPHER Y.
+SKFDC – KAG - FIRST CLASS - DANDRE C.
+SKFGC – KAG 4TH-6TH CLASS - GERALDINE C.
+SKFJC – KAG FIRST CLASS - JOSEPH C.
+SKFSM – KAG - FOURTH TO SIX CLASS MUNICIPALITIES
+SKGBA – KAG GCA - BONG A.
+SKGCA – KAG - GROWTH CORRIDOR AREA
+SKGCY – KAG GCA - CHRISTOPHER Y.
+SKGJC – KAG GCA - JOSEPH C.
+SKGMW – KAG GCA - MHARK W.
+SKGRP – KAG GCA - RHOLEN P.
+SKMDC – KAG MINDORO - DANDRE C.
+SKMIN – KAG - ORIENTAL MINDORO
+SKMJB – KAG MINDORO - JOY B.
+SKRDC – KAG MIMAROPA - DANDRE C.
+SKS8 – SL NKAG SUPER8
+SKSBA – KAG 2ND & 3RD - BONG A.
+SKSGC – KAG 2ND & 3RD - GERALDINE C.
+SKSTM – KAG - SECOND&THIRD CLASS MUNICIPALITIES
+SKUM – SL DKAG ULTRAMEGA
+SR4B – MIMAROPA
+SRBA – RESOURCE BASE AREA`,
+
+  MGEN: `MCAR – MERCHANDISERS CAR
+MCDO – CDO MERCHANDISERS
+MDAV – DAVAO MERCHANDISERS
+MEBI – BICOL MERCHANDISERS
+MECL – CENTRAL LUZON MERCHANDISERS
+MENL – NORTH LUZON MERCHANDISERS
+MESL – SOUTH LUZON MERCHANDISERS
+MGMA – GMA MERCHANDISERS
+MGSN – GENSAN MERCHANDISERS
+MILO – ILO-ILO MERCHANDISERS
+MNCE – CEBU MERCHANDISERS
+MTAC – TACLOBAN MERCHANDISERS`,
+
+  EVER: `BACO – EPI - BACOLOD
+BATA – EPI BATANGAS
+BCGM – BATTERY CONSULTANT GMA
+BICO – EPI BICOL AREA
+CAGA – EPI- CAGAYAN DE ORO
+CEBU – EPI - CEBU
+CENT – EPI CENTRAL LUZON AREA
+DAVA – EPI - DAVAO CITY
+EGM1 – EPI GMA AREA- CHRISTOPHER SALIVIO
+ENCO – EPI ENCODER
+FJAJ – EPI JR SALES ASSISTANT CENTRAL JR.
+FJCG – FIELD JUNIOR COORDINATOR IN GMA- COMMANDO
+FJIL – EPI JR.SALES ASSISTANT ILO-ILO
+FJSA – EPI JR SALES ASST.
+FTCC – FTC- CAGAYAN DE ORO
+FTCD – EPI-FTC DAVAO
+FTCE – FTC CEBU
+FTCG – EPI FTC IN GMA AREA
+FTCI – FTC-ILO-ILO
+FTCL – EPI FTC IN CENTRAL LUZON AREA
+FTCN – EPI FTC IN NORTH LUZON AREA
+FTCS – EPI FTC IN SOUTH
+ILO. – EPI - ILOILO
+NL1. – EPI NORTH LUZON1 MERCHANDISER
+NORT – EPI NORTH AREA
+PALA – EPI PALAWAN AREA
+TACB – EPI TACTICAL COMMANDO OF BC
+TACE – EPI TACTICAL COMMANDO IN CEBU
+TACT – EPI TACTICAL COMMANDO IN GMA`,
+
+  BMEG: `CCEB – MEGA FTC CEBU
+CCLU – MEGA FTC CENTRAL LUZON
+CDAV – MEGA FTC DAVA
+CGMA – MEGA FTC GMA
+ENCO – MEGA ENCODER GMA
+MBAC – BACOLOD TACTICAL
+MCEB – MEGA MERCHANDISERS CEBU
+MCEN – MEGA MERCHANDISERS CENTRAL
+MCL1 – MEGA MERCHANDISERS CENTRAL GMA RATE
+MDAV – MEGA MERCHANDISER DAVAO
+MNCR – MEGA MERCHANDISERS GMA
+MSLU – MEGA MERCHANDISER SOUTH LUZON
+MTAC – MEGA MERCHANDISERS TACLOBAN/ORMOC
+MTAS – SOUTH LUZON TACTICAL
+TMDC – MEGA TACTICAL MERCHANDISER GMA`,
+
+  MRCO: `BUT1 – BUTUAN-DAG
+BUTD – BUTUAN-DKAG
+BUTU – BUTUAN AREA
+CAG1 – CAGAYAN 1 AREA
+CAGA – CAGAYAN AREA
+COTA – COTABATO AREA
+DAV1 – DAVAO 1 AREA
+DAVA – DAVAO AREA
+DAVN – DAVAO NORTH 1
+DIG2 – REBISCO-DIGOS
+DIGO – DIGOS AREA
+DIPO – DIPOLOG AREA
+GEN1 – GENSAN 1
+GEN3 – KCC MARIBEL & COTABATO
+GENE – GENSAN AREA
+ILIG – ILIGAN AREA
+KORO – KORONADAL
+MCGM – MULTIRICH FOODS COORDINATORS GMA
+MMGM – MULTIRICH MERCHANDISER GMA
+MOLA – MOLAVE AREA
+OROQ – OROQUETA AREA
+OZAM – OZAMIS AREA
+PAGA – PAGADIAN AREA
+RNCR – MULTIRICH GMA MERCHANDISER
+SIND – SINDANGAN AREA
+TAG1 – TAGUM DAVAO
+TAGU – TAGUM AREA
+VALD – BUKIDNON
+VALE – VALENCIA BUKIDNOON AREA
+ZAM1 – ZAMBOANGA AREA-DAG
+ZAMB – ZAMBOANGA AREA
+ZAMD – ZAMBOANGA-DKAG`,
+
+  MFIC: `MFCG – MFI Coordinator GMA
+MGMA – MFI GMA Merchandisers
+TCGM – TACTICAL GMA MERCHANDISERS`,
+
+  RNUT: `BAG. – NUTRI BAGUIO
+BIC2 – NUTRI BICOL AREA 2
+BICO – NUTRI BICOL AREA
+CAGA – NUTR CAGAYAN VALLEY (NEL2)
+CLUZ – CENTRAL LUZON
+CLZ1 – CENTRAL LUZON
+ISAB – NUTRI ISABELA /SOLANO (NEL2)
+NEL4 – NUTRI NEL4
+NELG – GMA RATE
+NELL – NEL1
+NNWL – NUTRI ILOCOS,LA UNION,PAG,DAG
+NWL3 – MAYRONG NEL4 RATE
+NWLA – DAG,URDNTA ALAMINOS
+SL1G – SOUTH LUZON 1 GMA RATE
+SL2G – SOUTH LUZON 2 GMA RATE
+SLB2 – (B) LOS BANOS, STA CRUZ, CALAMBA
+SLBC – SOUTH LUZON B CLASS C
+SLBD – SOUTH LUZON B CLASS D
+SLBG – SOUTH LUZON MANILA RATE
+SLBS – SINILOAN LAGUNA RATE
+SLCC – SOUTH LUZON C CLASS C
+SLCD – SOUTH LUZON C CLASS D
+SLCR – SOUTH LUZON C RESOURCE BASED AREA MINDORO
+SLG1 – GMA
+SUP1 – SUPERVISOR- UNDER NUTRI
+SUPE – SUPERVISOR IN GMA,SOUT,NORTH, BICOL
+TCOM – TACTICAL COMMANDO
+VIZC – NUTRI NUEVA VIZCAYA (NEL2)`,
+
+  RGFVI: `EVER – EVER MERCGANDISERS
+GMAD – GMA DKAG MERCHANDISERS
+GMAN – GMA NKAG MERCHANDISERS
+LAND – LANDMARK MERCHANDISERS
+PURE – PUREGOLD MERCHANDISERS
+R711 – PHIL-SEVEN MERCHANDISERS
+RGAI – METRO MERCHANDISERS
+RGMS – REBISCO SET UPPER GMS
+RNCR – REBISCO GMA MERCHANDISERS
+ROBI – ROBINSON MERCHANDISERS
+RSSM – SM GROUP MERCHANDISERS
+RSUB – SUPER 8 MERCHANDISERS
+RUNI – UNIMART MERCHANDISERS
+RUTM – REBISCO GMA ULTRAMEGA MERCHANDISERS
+RWAL – WALTERMART MERCHANDISERS`,
+
+  REBI: `BCAP – KCC BRANCH CAPTAIN
+BUCO – REBISCO BUTUAN COORDINATOR
+BUTU – REBISCO - BUTUAN CITY
+CAG2 – REBISCO CAGAYAN DE ORO CITY-2
+COCA – REBISCO CAGAYAN COORDINATOR
+COTA – REBISCO - COTABATO CITY
+COTC – COTABATO COORDINATOR
+DACO – REBISCO DAVAO COORDINATOR
+DAVN – DAVAO NORTH 1
+DCOP – REBISCO DIPOLOG COORDINATOR
+DICO – REBISCO - DIGOS DAVAO COORDINATOR
+DIG2 – REBISCO-DIGOS
+DIPO – REBISCO - DIPOLOG CITY
+GECO – GENSAN COORDINATOR
+KORO – KORONADAL
+MACO – MARBEL COORDINATOR
+MINS – REBISCO MINDANAO SET UPPER
+OROQ – REBI-OROQUETA
+OZAM – REBISCO - OZAMIS CITY
+OZCO – REBISCO-OZAMIS COORDINATOR
+PAGA – REBISCO - PAGADIAN CITY
+PAGC – PAGADIAN COORDINATOR
+RCGM – REBISCO COORDINATOR GMA
+RMDA – REBISCO MINDANAO - DATA ANALYST
+RMGM – REBISCO MERCHANDISER GMA
+RNCR – REBISCO GMA MERCHANDISERS
+TAGC – REBISCO TAGUM COORDINATOR
+ZACO – REBISCO ZAMBOANGA COORDINATOR`,
+
+  SUSA: `BUT1 – BUTUAN-DAG
+BUTU – BUTUAN
+CAG2 – MISAMIS ORIENTAL
+CAGA – CAGAYAN
+CAMI – CAMIGUIN
+CDO1 – CAGAYAN
+COTA – COTABATO
+DAV1 – DAVAO AREA 1
+DAVN – DAVAO NORTH 1
+DIG2 – DIGOS
+DIGO – DIGOS
+DIPO – DIPOLOG
+GEN1 – GENSAN 1
+GENE – GENERAL SANTOS
+GING – GINGOOG
+ILIG – ILIGAN
+KORO – KORONADAL
+LANA – LANAO
+MOLA – MOLAVE
+OROQ – OROQUETA
+OZAM – OZAMIS
+PAGA – PAGADIAN
+SIND – SINDANGAN
+TAGU – TAGUM CITY
+VALE – VALENCIA
+ZAM1 – ZAMBOANGA-DAG
+ZAMB – ZAMBOANGA`,
+
+  SUSI: `BUTD – BUTUAN-DKAG
+BUTN – BUTUAN-NKAG
+CAGD – CAGAYAN- DKAG
+CAGN – CAGAYAN-NKAG
+COTN – COTABATO-NKAG
+DAV2 – DAVAO-NKAG
+DAVA – DAVAO-DKAG
+DIGN – DIGOS- NKAG
+DIGO – DIGOS-DKAG
+DIPN – DIPOLOG-NKAG
+DIPO – DIPOLOG-DKAG
+GEN2 – GENSAN-NKAG
+GEN3 – KCC MARIBEL & COTABATO
+GENE – GENSAN-DKAG
+GIND – GINGOOG-DKAG
+ILID – ILIGAN-DKAG
+ILIG – ILIGAN
+ILIN – ILIGAN-NKAG
+KORN – MARBEL-NKAG
+LAND – LANAO-DKAG
+MOLA – MOLAVE-DKAG
+OROD – OROQUETA- DKAG
+ORON – OROQUETA-NKAG
+OZAM – OZAMIS-DKAG
+OZAN – OZAMIS-NKAG
+PAGA – PAGADIAN-DKAG
+PAGN – PAGADIAN-NKAG
+SIND – SINDANGAN-DKAG
+TAG1 – TAGUM-DKAG
+VALD – VALENCIA-DKAG
+VALN – VALENCIA-NKAG
+ZAMD – ZAMBOANGA-DKAG`,
+
+  UNFS: `UEGM – GMA UFS ENCODER
+UFCA – CAR UFS REFILLER
+UFCL – CENTRAL LUZON UFS REFILLER
+UFCS – CENTRAL LUZON SPECIAL RATE UFS REFILLER
+UFCT – CENTRAL LUZON UFS TACTICAL
+UFGM – GMA UFS REFILLER
+UFGS – GMA SPECIAL RATE UFS REFILLER
+UFGT – GMA UFS TACTICAL
+UFNL – NORTH LUZON UFS REFILLER
+UFNT – NORTH LUZON UFS TACTICAL
+UFPL – UFS PALAWAN REFILLERS
+UFSS – SL SPECIAL RATE UFS REFILLER
+UFST – STAG UFS TACTICAL
+UFTS – STAG SPECIAL RATE UFS REFILLER
+UGMA – GMA UFS FMS
+UGNL – NORTH/CENTRAL LUZON UFS FMS
+UGSS – STAG/SL UFS FMS`,
+
+  UASL: `BUCN – BUNDLER CATANDUANES NEW RATE
+BUMR – BUNDLER MASBATE RATE
+BUNC – BUNDLER NAGA
+BURP – BUNDLER PALAWAN
+LEBR – LEGA BUNDLER RATES
+SPB5 – SHORTPACKERS BICOL RATE`,
+
+  UNIF: `FGAU – EDDGIE AUDITORS
+FGEN – GT ACCOUNTS - ENCODER
+FGSC – GT ACCOUNTS - SMMT (CENTRAL)
+FGSS – GT ACCOUNTS - SMMT (SOUTH)
+FOOF – FMS GT ACCOUNTS
+FPMA – GT ACCOUNTS - PM BOYS (ACRO)
+FSAG – GT ACCOUNTS - ACRO (GMA)
+FSMG – GT ACCOUNTS - STMI (GMA)
+FSRG – GT ACCOUNTS - REVO (GMA)
+FSSA – GT ACCOUNTS - SSS ASSIST (ACRO)
+FWSA – WHOLESALER PPP (ACRO)
+RCLA – RELIEVER FOR CENTRAL
+RGMA – RELIEVER FOR GMA AREA
+TLCA – CENTRAL AREA
+TLGC – TEAM LEADER GCA R4A
+UDEV – DEVELOPMENT OFFICE
+UFMM – FEILD MERCH. MGR.`,
+
+  UNIG: `HCMS – HPC CENTRAL PUREGOLD MT
+HCSM – HPC CENTRAL REFILLERS SM
+HDMT – ULP-HPC FMS MT ACCOUNTS
+HPEN – ULP-HPC ENCODER
+HPUR – ULP-HPC GMA PUREGOLD MT ACCOUNTS
+HSMT – HPC Synergy rate MT accounts
+HSU8 – ULP-HPC PUREGOLD MT ACCOUNTS-SOUTH LUZON
+HSVS – HPC SVI SYNERGY
+NBBR – NEW BALANCE BATANGAS RATE
+NBCL – NEW BALANCE CAVITE/LAGUNA RATE
+NTLR – NEW TIAONG TO LUCENA RATE
+PBCL – PG BALANCE CAVITE/LAGUNA RATE
+PTBR – PG TANAUAN TO BAUAN RATE
+PTLR – PG TIAONG TO LUCENA RATE
+RGCA – RELIEVER FOR SOUTH LUZON PG
+RGMA – RELIEVER FOR GMA
+SMGM – SM (SNOWBALL OND) GMA
+SPGM – PUREGOLD SNOWBALL REFILLER
+SSGM – SM SNOWBALL REFILLER
+TLBL – TEAM LEADER BALANCE LAGUNA
+TLCA – TEAM LEADER CENTRAL AREA
+TLGC – TEAM LEADER GCA
+TLTB – TEAM LEADER TANUAN-BAUAN
+UDEV – UNILEVER DEV. OFFICER - MT
+UFMM – FIELD MERH. MGR - MT
+UKAR – ULP KEY ACCT. REP
+UKAS – ULP KEY ACCOUNT S`,
+
+  UNIM: `FCRM – REFILLERS CENTRAL - RTM
+FDMT – FMS GMA - RTM
+FGRM – REFILLERS GMA - RTM
+FSRM – REFILLERS GCA - RTM
+RCLA – RELIEVER FOR CENTRAL
+RGCA – RELIEVER FOR SOUTH LUZON
+RGMA – RELIEVER GMA
+TLCA – REFILLERS SPL RATES
+TLCT – REFILLERS SPL RATES
+TLGC – REFILLERS SPL RATES
+TLN1 – REFILLERS SPL RATES
+UFMM – FIELD MERCH. MGR. - RTM`,
+
+  UNIR: `DEVO – 5SOUTH DEVELOPMENT OFFICER
+EGCA – ENCODER GCA RATE
+ENTQ – ENCODER TIAONG TO LUCENA
+F4BD – FMS R4B - DOMINO RATE
+FCLB – FMS CAVITE, LAGUNA, BATANGAS GCA RATE
+FGCA – FMS GCA CORE RATE
+FM4B – FMS R4B CORE RATE
+FMPA – FMS PALAWAN RATE
+FMQU – FMS QUEZON AREA
+FMR5 – FMS REGION 5 (BICOL)
+FMS5 – FMS BICOL CORE RATE
+FMSR5 – FIELD ACTIVATION SUPERVISOR R5
+FMTQ – FMS TIAONG TO LUCENA RATE
+FNTB – FMS TANAUAN TO BAUAN RATE
+FR5D – FMS R5 - DOMINO RATE
+FTLD – FMS TIAONG-LUCENA DOMINO RATE
+LEGA – LEGASPI REFILLERS (HPC)
+MGLE – SL MAG MT REFILLER - LEGASPI
+MGQU – SL MAG MT REFILLER - QUEZON
+MGTI – SL MAG MT REFILLER - TIAONG-LUCENA
+MTMI – MT REFILLERS MINDORO AREA
+NBCP – CAVITE PMAs BALANCE CAVITE-NEW RATE
+PCSL – PROJECT COORDINATOR - SL
+PD4A – STAG PROJECT DOMINO - REGION IVA-2
+PDBQ – SL PROJECT DOMINO - BALANCE QUEZON
+PDTI – SL PROJECT DOMINO - TIAONG-LUCENA
+PMBA – STAG PMA REFILLER - BATANGAS
+PMCA – STAG PMA REFILLER - CAVITE
+PMLA – STAG PMA REFILLER - LAGUNA
+PMLE – SL PMA REFILLER - LEGASPI
+PMMI – STAG PMA REFILLER - MINDORO
+PMNA – SL PMA REFILLER - NAGA
+PMPW – SL PMA REFILLER - PALAWAN
+PMQU – SL PMA REFILLER - QUEZON
+PMRO – SL PMA REFILLER - ROMBLON
+PMTB – STAG PMA REFILLER - TANUAN-BAUAN
+PMTI – SL PMA REFILLER - TIAONG-LUCENA
+RBCL – RELIEVER BALANCE CAV.LAG
+RBQU – RELIEVER BALANCE QUEZON
+RCTD – RELIEVER CATANDUANES
+RGCB – RELIEVER GCA BATANGAS
+RGCC – RELIEVER GCA CAVITE
+RGCL – RELIEVER GCA LAGUNA
+RLGP – RELIEVER LEGASPI
+RMBT – RELIEVER MASBATE
+RMDQ – RELIEVER MARINDUQUE
+RMIN – RELIEVER MINDORO
+RNGA – RELIEVER NAGA
+RPWN – RELIEVER PALAWAN
+RRBN – RELIEVER ROMBLON
+RTBB – RELIEVER TANUAN-BAUAN
+RTLQ – RELIEVER TIAONG TO LUCENA
+SAPM – SENIOR ACTIVATION PROJECT MANAGER
+SLAC – SOUTH LUZON AREA COORDINATOR
+SLBL – SL REFILLER - BALANCE LAGUNA
+SLBQ – SL REFILLER - BALANCE QUEZON
+SLCT – SL REFILLER - CATANDUANES
+SLLD – SL REFILLER LCC DIMASALANG
+SLLE – SL REFILLER - LEGASPI
+SLLJ – SL REFILLER - BICOL (LCC JACINTO)
+SLLN – SL REFILLER - LANDERS NAGA
+SLM5 – SUPER METRO REFILLERS BALANCE QUEZON
+SLMB – SL REFILLER - MASBATE
+SLNA – SL REFILLER - NAGA
+SLPG – SL REFILLERS PUREGOLD DAET - ADDTL
+SLPW – SL REFILLER - PALAWAN
+SLQU – SL REFILLER - QUEZON
+SLRB – RRHI BALANCE QUEZON
+SLRL – RRHI R5 - Legaspi
+SLRN – RRHI R5 - Naga
+SLRP – RRHI R4B - Palawan
+SLRQ – RRHI R4A - QUEZON
+SLSI – SL REFILLER SEDI - IBAAN
+SLTI – SL REFILLER - TIAONG-LUCENA
+SMBB – SM BALANCE BATANGAS
+SMBQ – SM R4A-Bal.Quezon
+SMMR – STAG/SL MERRYMART REFILLERS
+SPBB – PUREGOLD BALANCE BATANGAS
+SPBI – PUREGOLD R5 - TABACO
+SPBID – PUREGOLD R5 - BICOL RATE
+SPBQ – PUREGOLD R4A-Bal.Quezon
+SPLE – PUREGOLD R5 - Legaspi
+SPMI – PUREGOLD R4B - Mindoro
+SPMI2 – PUREGOLD R4B - Mindoro
+SPMQ – PUREGOLD R4B - Marinduque
+SPNA – PUREGOLD R5 - Naga
+SPNG – PUREGOLD R5 - NAGA
+SPQU – PUREGOLD R4A - Quezon (Tiaong to Lucena)
+SPSG – PUREGOLD R5 - Sorsogon
+SRBB – RRHI BALANCE BATANGAS
+SSBA – STAG SSA REFILLER - BATANGAS
+SSBC – SSA BALANCE CAVITE
+SSBID – SM R5 - REGULAR R5 RATE
+SSCA – STAG SSA REFILLER - CAVITE
+SSIS – SL SSA REFILLER - ISLANDS
+SSLA – STAG SSA REFILLER - LAGUNA
+SSLE – SM R5 - Legaspi
+SSLN – REFILLER-BALANCE QUEZON LANDERS
+SSMI – STAG SSA REFILLER - MINDORO
+SSMN – SM R4B - Mindoro
+SSNG – SM R5 - Naga
+SSPA – SM R4B - Palawan
+SSPW – SL SSA REFILLER - PALAWAN
+SSQZ – SM R4A - Quezon (Tiaong to Lucena)
+SSRO – SL SSA REFILLER - ROMBLON
+SSSG – SM R5 - Sorsogon
+SSTB – STAG SSA REFILLER - TANUAN-BAUAN
+SSTI – SL SSA REFILLER - TIAONG-LUCENA
+STBA – STAG REFILLER - BATANGAS
+STBB – STAG REFILLER - BALANCE BATANGAS
+STBC – STAG REFILLER - BALANCE CAVITE/LAGUNA
+STCA – STAG REFILLER - CAVITE
+STGM – STAG REFILLER - GMA
+STLA – STAG REFILLER - LAGUNA
+STM2 – STAG REFILLERS - Mindoro (Tanuan Rate)
+STMI – STAG REFILLER - Mindoro (R4B)
+STRM – RRHI R4B - Mindoro
+STTB – STAG REFILLER - TANUAN-BAUAN
+UNIR – Selecta-commando
+WGCA – WINTER REFILLLERS - GCA-CAVITE/LAGUNA
+WR4B – WINTER REFILLERS - MIMAROPA
+WRR5 – WINTER REFILLERS - BICOL AREA
+WRTB – WINTER REFILLERS-TANUAN TO BAUAN
+WSBA – WSA REFILLERS BALANCE BATANGAS AREA
+WSBB – STAG WSA REFILLER - BALANCE BATANGAS
+WSBC – WSA BALANCE CAVITE/LAGUNA AREA
+WSBQ – WHOLESALER BALANCE QUEZON
+WSCA – WSA REFILLERS CAVITE AREA
+WSLA – STAG WSA REFILLER - LAGUNA
+WSLE – SL WSA REFILLER - LEGASPI
+WSMI – WSA REFILLERS MINDORO AREA
+WSNA – SL WSA REFILLER - NAGA
+WSPA – WSA REFILLERS PALAWAN AREA
+WSQU – WSA REFILLERS-QUEZON AREA
+WSTB – WSA Refillers-Tanuan to Bauan
+WSTL – WHOLESALER TIAONG TO LUCENA`,
+
+  UNIL: `ACSE – AC SELECTA
+ENSE – Selecta Encoder Laguna
+FMSE – FMS SELECTA ICE CREAM
+FSEB – FMS SELECTA BICOL AREA
+SBQR – SELECTA BALANCE QUEZON RATE
+SEBQ – Selecta Refillers-Bats/Quezon
+SEMI – SELECTA REFILLER TRANSITION - MINDORO
+SENA – SELECTA REFILLERS SYNERGY - NAGA/LEGASPI
+SESC – Selecta-Cavite Area
+SESL – Selecta Refillers-Laguna Area
+SETB – SELECTA REFILLERS TANUAN TO BAUAN
+SNBA – SELECTA REFILLERS NEW RATE BALANCE BATANGAS
+SNBQ – SELECTA NEW RATE TIAONG TO LUCENA
+SNLA – SELECTA REFILLERS NEW RATE BALANCE LAGUNA`,
+
+  UACS: `5SES – 5SOUTH SORTER
+BBNR – BANDER BATANGAS NEW RATE
+BBOR – BATANGAS BUNDLERS OTHER RATE
+BMIN – BUNDLERS MINDORO (270)
+BMRP – BUNDLERS - MIMAROPA
+BSEN – BRGY SUKI - ENCODER
+BSPC – BRGY SUKI - PROJECT COOR
+BSPG – BRGY SUKI - PUSH GIRL
+BUB1 – BUNDLER BATANGAS RATE 1
+BUBA – BUNDLER BATANGAS
+BUNC – BUNDLER CAVITE
+BUND – Bundlers Cavite
+BUNE – BUNDLER BATANGAS NEW RATE
+BUNL – BUNDLER LAGUNA NEW RATE
+BUNP – BUNDLER Laguna/Batangas
+BUNQ – BUNDLER QUEZON NEW RATE
+BUNV – BUNDLER Quezon
+BUQU – BUNDLER QUEZON NEW RATE (344)
+CABU – CAVITE BUNDLER NEW RATE(366)
+COLA – COOK LAGUNA
+DODB – DAY-OFF DUTY BATANGAS
+DODC – DAY- OFF DUTY CAVITE
+DODL – DAY- OFF DUTY LAGUNA
+DODQ – DAY- OFF DUTY QUEZON
+HELB – HELPER BATANGAS RATE
+HELC – HELPER CAVITE RATE
+HELM – HELPER MINDORO RATE
+HEQU – HELPER - QUEZON
+HLNR – HELPER LAGUNA NEW RATE
+HLPC – HELPER CAVITE
+LABU – LAGUNA BUNDLER NEW RATE
+MIBU – MINDORO BUNDLER (344)
+PCBA – PROJECT COORDINATOR BATANGAS
+PCBT – PROJECT COOR. BATS. 361.20
+PCCR – PROJECT COOR. CAVITE (404.44)
+PCLA – PROJECT COORDINATOR LAGUNA
+PCQU – PROJECT COOR QUEZON RATE
+PGBA – PUSH GIRL BATANGAS
+PGBN – PUSH GIRL BATANGAS NEW RATE
+PGCR – PUSH GIRL CAVITE RATE
+PGCV – PUSH GIRL CAVITE
+PGLA – PUSH GIRL LAGUNA
+PGQU – PUSH GIRL QUEZON
+PGRC – PUSH GIRL CAVITE
+PGRL – Push Girl Laguna/Batangas
+PGRQ – PUSH GIRL QUEZON
+RECA – REFILLER CAVITE
+REOT – REFILLER OVERTIME
+SENC – SORTER ENCODER`,
+
+  "2WAL": `MNCR – MERCHANDISER - GMA
+MSLU – MERCHANDISER - SOUTH LUZON`,
+
+  "2AFAF": `2AFCL – ALASKA FRONERI ALFAMART - CENTRAL
+2AFGM – ALASKA FRONERI ALFAMART - GMA
+2AFN1 – ALASKA FRONERI ALFAMART - R1
+2AFSL – ALASKA FRONERI ALFAMART - SL`,
+
+  "2AFLM": `2MNCR – ALASKA FRONERI - LANDMARK GMA
+2MNSLU – ALASKA FRONERI - LANDMARK - SOUTH LUZON`,
+
+  "2MZE": `MGMA – MERCHANDISERS GMA AREA`,
+
+  "2RZA": `MBAC – MERCHANDISER PANAY AREA
+MBIC – MERCHANDISER BICOL AREA
+MCEB – MERCHANDISER CEBUAREA
+MDUM – MERCHANDISER DUMAGUETE AREA
+MR4B – MERCHANDISER R4B AREA
+MSLU – MERCHANDISER SL AREA
+MTAC – MERCHANDISER TACLOBAN AREA`,
+
+  "2SZA": `MBIC – 2WAY SM AJI -ZESTO BICOL
+MBIL – 2WAY SM AJI-ZESTO BACOLOD ILOILO
+MBUT – 2WAY SM AJI-ZESTO CARAGA
+MCAR – 2WAY SM AJINOMOTO-ZESTO CAR MERCHANDISER
+MCDO – 2WAY SM AJI-ZESTO CDO
+MCEB – 2WAY SM AJI-ZESTO CEBU
+MCLU – 2WAY SM AJI-ZESTO CL MERCHANDISERS
+MDAV – 2WAY SM AJI-ZESTO DAVAO
+MNCR – 2WAY SM AJI-ZESTO NCR MERCHANDISERS
+MNL1 – 2WAY SM AJI-ZESTO NL 1
+MNL2 – 2WAY SM AJI-ZESTO NL 2
+MSLU – 2WAY SM AJI-ZESTO SL MERCHANDISERS
+MSOC – 2WAY SM AJI-ZESTO GENSAN
+MTAC – 2WAY SM AJI-ZESTO TACLOBAN
+MZAM – 2WAY SM AJI-ZESTO ZAMBOANGA`,
+
+  "2AFR": `AFRBA – 2WAY AMC - FRON CAR MERCH
+AFRBI – 2WAY AMC - FRON REGION 5 MERCH
+AFRCD – 2WAY AMC - FRON REGION 10 MERCH
+AFRCE – 2WAY AMC - FRON REGION 7 MERCH
+AFRCL – 2WAY AMC - FRON REGION 3 MERCH
+AFRDA – 2WAY AMC - FRON REGION 11 MERCH
+AFRIL – 2WAY AMC - FRON REGION 6 MERCH
+AFRISA – 2WAY AMC - FRON REGION 1 MERCH
+AFROG – 2WAY AMC - FRON - GMA MERCH
+AFRPA – 2WAY AMC - FRON REGION 2 MERCH
+AFRSL – 2WAY AMC - FRON REGION 4A MERCH`,
+
+  AJCF: `FTGM – 2WAY COORDINATOR - GMA
+MCLU – 2WAY MERCHANDISER - CENTRAL LUZON
+MNCR – 2WAY MERCHANDISER - GMA
+MSLU – 2WAY MERCHANDISER - SOUTH LUZON`,
+
+  "3AFE": `AFRECL – 3WAY - R3 MERCH
+AFREG – 3WAY - GMA MERCH
+AFRESL – 3WAY - R4A MERCH`,
+
+  "3FZE": `MGMA – MERCHANDISERS GMA AREA`,
+
+  "3FEM": `MBAC – MERCHANDISER - BACOLOD/ILOILO
+MCDO – MERCHANDISER - CDO
+MCLU – MERCHANDISER - CENTRAL LUZON
+MDAV – MERCHANDISER - DAVAO
+MNCR – MERCHANDISER - NCR
+MSLU – MERCHANDISER - SOUTH LUZON`,
+
+  "3FPE": `MBAC – MERCHANDISERS - BACOLOD&ILO-ILO (R6)
+MBIC – MERCHANDISERS - BICOL (R5)
+MBOR – MERCHANDISERS - BORACAY SPECIAL RATE
+MCAR – MERCHANDISERS - CAR (NCR RATE)
+MCDO – MERCHANDISERS - CDO (R10)
+MCEB – MERCHANDISERS - CEBU (R7)
+MCLU – MERCHANDISERS - CENTRAL LUZON (R3)
+MCRG – MERCHANDISERS - CARAGA (R13)
+MDAV – MERCHANDISERS - DAVAO (R11)
+MDUM – MERCHANDISERS - DUMAGUETE (R6)
+MGMA – MERCHANDISERS - GMA
+MGSN – MERCHANDISERS - GENSAN (R12)
+MNL1 – MERCHANDISERS - NORTH LUZON 1 (R1)
+MNL2 – MERCHANDISERS - NORTH LUZON 2 (R2)
+MR4B – MERCHANDISERS - MIMAROPA (R4B)
+MSLU – MERCHANDISERS - SOUTH LUZON (R4A)
+MTAC – MERCHANDISERS - TACLOBAN (R8)`,
+
+  "3ZAC": `MCGM – COORDINATOR
+MNCR – MERCHANDISER GMA
+MSLU – MECHANDISER SOUTH LUZON`,
+
+  AJIN: `ABAC – AJINOMOTO BACOLOD MERCHANDISERS
+ABIC – AJINOMOTO COORDINATOR BICOL
+ABSB – AJINOMOTO BATANGAS STATION
+ACAC – Ajinomoto Coordinator Ormoc City
+ACAL – AJINOMOTO CALBAYOG MERCHANDISERS
+ACDO – AJINOMOTO MERCHANDISER CDO
+ACEB – Ajinomoto Cebu City
+ACEC – AJINOMOTO CEBU COORDINATOR
+ACLU – AJINOMOTO MERCHANDISER CENTRAL LUZON
+ACSB – AJINOMOTO CAMALIG STATION
+ACSC – AJINOMOTO CAVITE STATION
+ACSL – AJINOMOTO CALAMBA STATION
+ADAV – AJINOMOTO MERCHANDISER DAVAO
+ADUM – AJINOMOTO DUMAGUETE MERCHANDISERS
+AGEN – AJINOMOTO MERCHANDISER GENERAL SANTONS
+AGMC – AJINOMOTO COORDINATOR GMA
+AILC – AJINOMOTO COORDINATOR ILOILO
+AILO – Ajinomoto Iloilo City
+ALSQ – AJINOMOTO LUCENA STATION
+ANL1 – AJINOMOTO MERCHANDISER NORTH LUZON1
+ANL2 – AJINOMOTO MERCHANDISER NORTH LUZON2
+ANSG – AJINOMOTO NORTH STATION - GMA
+AORM – Ajinomoto Ormoc City
+APAL – AJINOMOTO PALAWAN
+APSB – AJINOMOTO PILI STATION
+ASLC – AJINOMOTO COORDINATOR SOUTH LUZON
+ASSG – AJINOMOTO SUPERMARKET SECTION-GMA
+ASSM – AJINOMOTO SOUTH STATION MANILA
+ATAC – AJINOMOTO TACTICAL COMMANDO
+AWMI – AJINOMOTO MERCHANDISER REQION IX
+AWSL – AJINOMOTO-WALTERMART SOUTH LUZON
+BUTU – AJIN BUTUAN MERCHANDISERS
+ENCO – AJINOMOTO ENCODER GMA
+FTCB – AJIN BUTUAN FTC
+FTCC – AJINOMOTO FTC CDO
+FTCD – AJINOMOTO FTC DAVAO
+FTCG – AJINOMOTO FTC GENSAN
+FTCL – AJINOMOTO FTC CENTRAL LUZON
+FTN1 – AJINOMOTO FTC NORTH LUZON 1
+FTN2 – AJINOMOTO FTC NORTH LUZON2
+FTWM – AJINOMOTO FTC WESTERN MINDANAO REG IX`,
+
+  AMCP: `AAOG – ALASKA ACCOUNT OFFICER
+ACDO – FIELD SUPERVISOR - CDO
+ADAV – FIELD SUPERVISOR - DAVAO
+AEND – ALASKA ENCODER DAVAO
+AENG – ENCODER - GMA
+AGMA – FIELD SUPERVISOR - GMA
+AMBA – FIELD SUPERVISOR - ILOILO/BACOLOD
+AMBA2 – KJ FAIRMART FIELD SUPERVISOR
+AMCBA – ALASKA EXC CAR MERCH
+AMCBI – ALASKA EXC R5 MERCH
+AMCCD – ALASKA EXC R10 MERCH
+AMCCE – ALASKA EXC R7 MERCH
+AMCCL – ALASKA EXC R3 MERCH
+AMCDA – ALASKA EXC R11 MERCH
+AMCE – FIELD SUPERVISOR - CEBU/SAMAR/LEYTE
+AMCGM – ALASKA EXC GMA MERCH
+AMCIL – ALASKA EXC R6 MERCH
+AMCIS – ALASKA EXC R1 MERCH
+AMCL – FIELD SUPERVISOR - C.LUZON
+AMCPA – ALASKA EXC R2 MERCH
+AMCSL – ALASKA EXC REGION 4A MERCH
+AMDA – ALASKA DATA ANALYST
+AMNL – FIELD SUPERVISOR - N.LUZON
+AMSL1 – FIELD SUPERVISOR - SL1
+AMSL2 – FIELD SUPERVISOR - SL2`,
+
+  BASF: `ADMN – ADMINISTRATION STAFF
+AST2 – ADMIN ASSISTANT
+BART – BASF GRAPHIC ARTIST - NEW
+BENC – BASF ENCODER
+BGR1 – GRAPHIC ARTIST
+BGR2 – GRAPHIC ARTIST
+BGRA – BASF GRAPHIC ARTIST
+GL10 – GEN TRADE LUZON
+GL11 – GEN TRADE LUZON
+GL12 – GEN TRADE LUZON
+GL13 – GEN TRADE LUZON
+GL14 – GEN TRADE LUZON
+GL16 – GEN TRADE LUZON
+GL17 – GEN TRADE LUZON
+GL18 – GEN TRADE LUZON
+GL19 – GEN TRADE LUZON
+GL20 – GEN TRADE LUZON
+GL21 – GEN TRADE LUZON
+GL22 – GEN TRADE LUZON
+GL23 – GEN TRADE LUZON
+GL24 – GEN TRADE LUZON
+GL25 – GEN TRADE LUZON
+GL26 – GEN TRADE LUZON
+GL27 – GEN TRADE LUZON
+GL28 – GEN TRADE LUZON
+GL29 – GEN TRADE LUZON
+GL30 – GEN TRADE LUZON
+GL31 – GEN TRADE LUZON
+GL32 – GEN TRADE LUZON
+GL33 – GEN TRADE LUZON
+GL34 – GEN TRADE LUZON
+GL36 – GEN TRADE LUZON
+GL37 – GEN TRADE LUZON
+GL38 – GEN TRADE LUZON
+GL39 – GEN TRADE LUZON
+GL40 – GEN TRADE LUZON
+GL41 – GEN TRADE LUZON
+GL42 – GEN TRADE LUZON
+GL43 – GEN TRADE LUZON
+GL44 – GEN TRADE LUZON
+GL45 – GEN TRADE LUZON
+GL46 – GEN TRADE LUZON
+GL47 – GEN TRADE LUZON
+GL48 – GEN TRADE LUZON
+GL49 – GEN TRADE LUZON
+GL51 – GEN TRADE LUZON
+GL52 – GEN TRADE LUZON
+GL53 – GEN TRADE LUZON
+GL54 – GEN TRADE LUZON
+GL55 – GEN TRADE LUZON
+GL56 – GEN TRADE LUZON
+GTL2 – GEN TRADE LUZON
+GTL3 – GEN TRADE LUZON
+GTL4 – GEN TRADE LUZON
+GTL6 – GEN TRADE LUZON
+GTL7 – GEN TRADE LUZON
+GTL8 – GEN TRADE LUZON
+GTL9 – GEN TRADE LUZON
+GTV1 – GEN TRADE VISMIN
+GTV2 – GEN TRADE VISMIN
+GTV3 – GEN TRADE VISMIN
+GTV4 – GEN TRADE VISMIN
+GTV5 – GEN TRADE VISMIN
+GTV6 – GEN TRADE VISMIN
+GTV7 – GEN TRADE VISMIN
+GTV8 – GEN TRADE VISMIN
+GTV9 – GEN TRADE VISMIN
+GV10 – GEN TRADE VISMIN
+GV11 – GEN TRADE VISMIN
+GV12 – GEN TRADE VISMIN
+GV13 – GEN TRADE VISMIN
+GV14 – GEN TRADE VISMIN
+GV15 – GEN TRADE VISMIN
+GV16 – GEN TRADE VISMIN
+GV17 – GEN TRADE VISMIN
+GV18 – GEN TRADE VISMIN
+GV19 – GEN TRADE VISMIN
+GV20 – GEN TRADE VISMIN
+GV21 – GEN TRADE VISMIN
+GV22 – GEN TRADE VISMIN
+GV23 – GEN TRADE VISMIN
+GV24 – GEN TRADE VISMIN
+GV25 – GEN TRADE VISMIN
+GV26 – GEN TRADE VISMIN
+GV27 – GEN TRADE VISMIN
+GV28 – GEN TRADE VISMIN
+GV29 – GEN TRADE VISMIN
+GV30 – GEN TRADE VISMIN
+GV31 – GEN TRADE VISMIN
+GV32 – GEN TRADE VISMIN
+GV33 – GEN TRADE VISMIN
+GV34 – GEN TRADE VISMIN
+GV35 – GEN TRADE VISMIN
+GV36 – GEN TRADE LUZON
+GV37 – GEN TRADE VISMIN
+GV38 – GEN TRADE VISMIN
+MK10 – MARKETING
+MK11 – MARKETING
+MK12 – MARKETING - CUSTOMER CARE OFFICER
+MKT1 – MARKETING
+MKT2 – MARKETING
+MKT3 – MARKETING
+MKT4 – MARKETING
+MKT5 – MARKETING
+MKT6 – MARKETING
+MKT7 – MARKETING ASSISTANT
+MKT8 – MARKETING ASSISTANT
+PLA1 – PLANTATION
+PLA2 – PLANTATION
+PLA3 – PLANTATION
+PLA4 – PLANTATION - ADMIN
+PLA6 – PLANTATION
+PNTM – PROJECT - NATIONAL TRADE MANAGER
+PSS1 – PSS
+PSS2 – PSS
+PSS3 – PSS`,
+
+  FRON: `FACM – FRONERI - ACCOUNT MANAGER
+FAOF – ACCOUNT OFFICER
+FCAR – MERCHANDISER - CAR
+FCCE – COORDINATOR - CEBU
+FCCL – COORDINATOR - CENTRAL LUZON
+FCCL2 – COORDINATOR CENTRAL LUZON
+FCGM – COORDINATOR - GMA
+FCMI – COORDINATOR - CDO & DAVAO
+FCMN – COORDINATOR- CARAGA, GENSAN, ZAMBOANGA
+FCN1 – COORDINATOR - NORTH LUZON 1
+FCNL – COORDINATOR - NORTH LUZON
+FCSL – COORDINATOR - SOUTH LUZON (MARIVEL)
+FCSL2 – COORDINATOR -SL (MARIE JOYCE & MARLY)
+FCTC – COORDINATOR TACLOBAN
+FCVI – COORDINATOR - VISAYAS
+FMBI – MERCHANDISER - BICOL
+FMBU – MERCHANDISER - BUTUAN
+FMCD – MERCHANDISER - CDO
+FMCE – MERCHANDISER - CEBU
+FMCL – MERCHANDISER - CENTRAL LUZON
+FMDA – MERCHANDISER - DAVAO
+FMGM – MERCHANDISER - GMA
+FMGS – MERCHANDISER - GENSAN
+FMIL – MERCHANDISER - ILOILO/BACOLOD
+FMIN – MINDORO MERCHANDISER
+FMN1 – MERCHANDISER - NORTH LUZON 1
+FMN2 – MERCHANDISER - NORTH LUZON 2
+FMPW – MERCHANDISER - PALAWAN
+FMSL – MERCHANDISER - SOUTH LUZON
+FMSS – ENCODER - MT SALES SUPPORT
+FMTA – MERCHANDISER - TACLOBAN
+FMZM – MERCHANDISER - ZAMBOANGA
+FNK2 – NKA BUSINESS SUPPORT ANALYST
+FNKA – NKA BUSINESS ANALYST - SPECIAL PROJECT
+FPCL – PROMO COORDINATOR - CENTRAL LUZON
+FPGM – ADMIN ASSISTANT
+FPMI – PROMO COORDINATOR - MINDANAO
+FPSL – PROMO COORDINATOR - SOUTH LUZON
+FRNL – REGIONAL SALES ADMIN - N.LUZON
+FROA – FRONERI - OPERATIONS ASSOCIATES
+FSPA – SALES INFO & TRADE ASSET ASSOCIATE
+FTAC – FRONERI TRADE ASSET COORDINATOR
+TCB2 – TACTICAL COMMANDO - BICOL
+TCBI – TACTICAL COMMANDO BICOL - SPECIAL
+TCCE – TACTICAL COMMANDO - CEBU
+TCCL – TACTICAL COMMANDO - CENTRAL LUZON
+TCDA – TACTICAL COMMANDO - DAVAO
+TCGM – TACTICAL COMMANDO - GMA
+TCIL – TACTICAL COMMANDO - ILO-ILO/PANAY
+TCN1 – TACTICAL COMMANDO - NORTH LUZON 1
+TCSL – TACTICAL COMMANDO - SOUTH LUZON
+TGMA – TACTICAL COMMANDO - GMA (NEW RATE)`,
+
+  KMEX: `BAG1 – BAGUIO MERCHANDISER
+CVBA – CVS BAGUIO/NL MERCHANDISERS
+CVCA – CVS CARAGA MERCHANDISERS
+CVCD – CVS CDO MERCHANDISERS
+CVDA – CVS DAVAO MERCHANDISERS
+CVGE – CVS GENSAN MERCHANDISERS
+CVGM – CVS GMA MERCHANDISERS
+CVIS – CVS ISABELA MERCHANDISERS
+EGjr – MDCI JR ENCODER
+EGSR – MDCI SENIOR ENCODER
+FTBA – BACOLOD/ILOILO COORDINATOR
+FTCD – CDO/OZAMIS COORDINATOR
+FTCE – CEBU AREA COORDINATORS
+FTCE2 – ADDITIONAL FTC CEBU AREA
+FTDA – DAVAO AREA COORDINATOR
+FTGM – GMA COORDINATORS
+FTNL – NORTH LUZON COORDINATOR
+GGEN – GENSAN MERCHANDISER
+GTBA – GT BACOLOD MERCHANDISER
+GTBI – GT MERCHANDISERS BICOL
+GTCD – GT CDO MERCHANDISER
+GTCE – GT CEBU MERCHANDISER
+GTCL – GT CL MERCHANDISER
+GTDA – DAVAO MERCHANDISER
+GTGM – GT GMA MERCHANDISER
+GTIL – GT ILOILO MERCHANDISER
+GTN1 – GT NL1 MERCHANDISER
+GTN2 – GT NL2 MERCHANDISER
+GTPA – GT PALAWAN MERCHANDISERS
+ISAB – NL ISABELA MERCHANDISERS
+NCHA – NG CHAIN GMA MERCHANDISER
+NSGM – NEW STORE SPECIALIST
+PBA1 – PEPSI BAGUIO MERCHANDISER
+PE3AM – PEPSI EXCLUSIVE MERCHANDISER - CL
+PE4BM – PEPSI EXCLUSIVE MERCHANDISER - R4B
+PEBIM – PEPSI EXCLUSIVE MERCHANDISER - BAC/ILO
+PEBOM – PEPSI EXCLUSIVE MERCHANDISER - BOHOL
+PECDO – PEPSI EXCLUSIVE MERCHANDISER - CDO
+PECE – PEPSI CEBU COORDINATOR
+PECEM – PEPSI EXCLUSIVE MERCHANDISER - CEBU
+PECL – PEPSI CL COORDINATOR
+PECRG – PEPSI EXCLUSIVE MERCHANDISER - CARAGA
+PECRM – PEPSI EXCLUSIVE MERCHANDISER - CAR
+PEDA – PEPSI DAVAO/CDO COORDINATOR
+PEDAM – PEPSI EXCLUSIVE MERCHANDISER - DAVAO
+PEGM – PEPSI COORDINATOR GMA
+PEGMM – PEPSI EXCLUSIVE MERCHANDISER - GMA
+PEGSN – PEPSI EXCLUSIVE MERCHANDISER - GENSAN
+PEIL – PEPSI ILOILO/BACOLOD COORDINATOR
+PENL – PEPSI NL COORDINATOR
+PENL1 – PEPSI EXCLUSIVE MERCHANDISER - R1
+PENL2 – PEPSI EXCLUSIVE MERCHANDISER - R2
+PER5M – PEPSI EXCLUSIVE MERCHANDISER - R5(BICOL)
+PESL – PEPSI SL COORDINATOR
+PESLM – PEPSI EXCLUSIVE MERCHANDISER - R4A (SL)
+PETAC – PEPSI EXCLUSIVE MERCHANDISER - TACLOBAN
+PEZAM – PEPSI EXCLUSIVE MERCHANDISER - ZAMBOANGA
+PNL1 – PUREGOLD NL1 MERCHANDISER
+PSLU – PEPSI - SOUTH LUZON
+PUCL – PUREGOLD CL MERCHANDISER
+PUGM – PUREGOLD GMA MERCHANDISER
+ROGM – ROBINSONS GMA MERCHANDISER
+RUGM – RUSTANS GMA MERCHANDISER
+SCDO – SM CDO MERCHANDISERS
+SHGM – SHOPWISE GMA MERCHANDISER
+SMBA – SM BACOLOD MERCHANDISER
+SMBC – SM BICOL MERCHANDISER
+SMCE – SM CEBU MERCHANDISER
+SMCL – SM CL MERCHANDISER
+SMDA – DAVAO SM ACCT MERCHANDISER
+SMGM – SM GMA MERCHANDISER
+SMSL – SM SOUTH LUZON MERCHANDISER
+SNL1 – SM NL1 MERCHANDISER
+UTGM – ULTRAMEGA GMA AREA`,
+
+  PVMP: `PVMAM – ACCOUNT MANAGER
+PVMCL – FIELD SUPERVISOR - CL
+PVMDA – DATA ANALYST
+PVMEN – ENCODER
+PVMGM – FIELD SUPERVISOR - GMA
+PVMIN – FIELD SUPERVISOR - MINDANAO
+PVMNL – FIELD SUPERVISOR - NL
+PVMSL – FIELD SUPERVISOR - SL
+PVMTR – TACTICAL REFILLER
+PVMVI – FIELD SUPERVISOR - VISAYAS`,
+
+  TARGET: `FSCA – SCA COOR LUZON
+TACT – TACTICAL COORDINATOR`,
+
+  ZSTO: `FSBA – FIELD SUPERVISOR BACOLOD AREA
+FSCE – FIELD SUPERVISOR CEBU AREA
+FSCL – FIELD SUPERVISOR CENTRAL AREA
+FSDA – FIELD SUPERVISOR DAVAO AREA
+FSGM – FIELD SUPERVISOR GMA AREA
+FSIL – FIELD SUPERVISOR ILO-ILO AREA
+FSNL1 – FIELD SUPERVISOR N.LUZON AREA
+FSSL – FIELD SUPERVISOR SLAREA
+MBAC – BACOLOD MERCHANDISERS
+MBHL – BOHOL MERCHANDISERS
+MCDO – CDO MERCHANDISERS
+MCEB – CEBU MERCHANDISERS
+MDUM – DUMAGUETE MERCHANDISERS
+MILO – ILOILO MERCHANDISERS
+MNCR – GMA MERCHANDISERS
+MTAC – TACLOBAN MERCHANDISERS
+SCCEB – SALES COOR CEBU
+TLTA – TEAM LEADER - TACLOBAN
+WCEB – WAREHOUSE HELPER - CEBU
+WHBHL – WAREHOUSE HELPER-BOHOL
+ZBA2 – BACOLOD OFFICE CLERK
+ZBA3 – BACOLOD SALES COOR
+ZBAC – WAREHOUSE HELPER - BACOLOD
+ZBACJR – JR SALESMAN BACOLOD
+ZBHL – JR SALESMAN BOHOL
+ZCDO – TEAM LEADER CDO
+ZCE2 – TACTICAL CEBU
+ZCEB – JR SALESMAN CEBU
+ZDAV – TEAM LEADER - DAVAO
+ZENC – ENCODER - GMA
+ZENCEB – ENCODER - CEBU
+ZIL2 – JR SALESMAN - ILOILO
+ZILO – ILOILO WAREHOUSE
+ZSLU – TACTICAL SOUTH LUZON
+ZTA2 – JR SALESMAN - TACLOBAN
+ZTA3 – WAREHOUSE HELPER - TACLOBAN
+ZTA4 – CASHIER TACLOBAN
+ZTAC – BRANCH OFFICE CLERK - TACLOBAN
+ZTILO – TACTICAL ILOILO`
+};
+
+// -> { BACH: [ [code, "CODE – NAME"], ... ], ... }
+const DEPTS = Object.fromEntries(Object.entries(DEPTS_RAW).map(([k, txt]) => [
+  k, txt.split("\n").map((l) => l.trim()).filter(Boolean).map((l) => [l.split(" – ")[0].trim(), l])
+]));
+
+
+const REQS = ["2x2 ID Photo", "E-Signature", "PSA Birth Certificate", "SSS", "PhilHealth", "Pag-IBIG", "TIN"];
+const BLUR_THRESHOLD = 60;
+const MIN_SIDE = 600;
+const ACCEPT = ".pdf,.jpg,.jpeg,.png";
+const DOC = `<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M9 13h6M9 17h6"/></svg>`;
+
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const say = (id, text, type = "") => { const el = $(id); if (el) { el.textContent = text; el.className = (el.className.includes("msg") ? "msg " : "st ") + type; } };
+const refOf = (r) => String(r._id).slice(-6).toUpperCase();
+
+/* ---------- Pop-up close animation + button ripple ---------- */
+function closeAnim(d) {
+  if (!d.open || d.classList.contains("closing")) return;
+  d.classList.add("closing");
+  setTimeout(() => { d.classList.remove("closing"); d.close(); }, 200);
+}
+$("dlg").addEventListener("cancel", (e) => { e.preventDefault(); closeAnim($("dlg")); });
+document.addEventListener("pointerdown", (e) => {
+  const b = e.target.closest("#dlg button");
+  if (!b || b.disabled) return;
+  const r = b.getBoundingClientRect(), sz = Math.max(r.width, r.height) * 2, sp = document.createElement("span");
+  sp.className = "ripple";
+  sp.style.cssText = `width:${sz}px;height:${sz}px;left:${e.clientX - r.left - sz / 2}px;top:${e.clientY - r.top - sz / 2}px`;
+  b.appendChild(sp);
+  setTimeout(() => sp.remove(), 600);
+});
+
+/* ---------- Toast ---------- */
+let toastTimer;
+const toast = (msg) => {
+  const t = $("toast");
+  t.textContent = msg; t.classList.add("show");
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove("show"), 2200);
+};
+
+/* ---------- Home: application cards ---------- */
+const APPS = [
+  { title: "201 Submission", open: true },
+  { title: "201 Data Update Request" },
+  { title: "COE Request" },
+  { title: "Employment Verification" },
+  { title: "AWOL Reporting" },
+  { title: "Resignation Reporting" },
+  { title: "Incident Report" },
+  { title: "Coming Soon" }
+];
+
+$("apps").innerHTML = APPS.map((a, i) => {
+  const go = a.open
+    ? `<div class="go"><span class="live"></span>OPEN APPLICATION <i>→</i></div>`
+    : `<div class="go">● COMING SOON</div>`;
+  return `<button type="button" class="app${a.open ? "" : " soon"}" data-i="${i}" style="--i:${i}"${a.open ? "" : ` aria-disabled="true"`}>
+    <div class="top"><div class="ico">${DOC}</div><div><div class="n">APPLICATION ${String(i + 1).padStart(2, "0")}</div><strong>${esc(a.title)}</strong></div></div>
+    ${go}</button>`;
+}).join("");
+
+$("apps").addEventListener("pointermove", (e) => {
+  const c = e.target.closest(".app");
+  if (!c) return;
+  const r = c.getBoundingClientRect();
+  c.style.setProperty("--mx", (e.clientX - r.left) + "px");
+  c.style.setProperty("--my", (e.clientY - r.top) + "px");
+});
+
+// Click "201 Submission" -> the fill-up form opens right away.
+$("apps").addEventListener("click", (e) => {
+  const b = e.target.closest("button.app");
+  if (!b) return;
+  const a = APPS[Number(b.dataset.i)];
+  if (a.open) return openForm();
+  b.classList.remove("shake"); void b.offsetWidth; b.classList.add("shake");
+  toast(`${a.title} is coming soon.`);
+});
+
+/* ---------- API ---------- */
+async function api(path, opts = {}) {
+  const token = await auth.currentUser.getIdToken();
+  let res;
+  try {
+    res = await fetch(API_URL + path, { ...opts, headers: { Authorization: "Bearer " + token, ...(opts.headers || {}) } });
+  } catch {
+    throw new Error("Cannot reach the server. Is the back-end running? (npm start in BACK-END)");
+  }
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data.error || "Request failed (" + res.status + ")");
+  return data;
+}
+function uploadFile(id, name, file) {
+  const fd = new FormData();
+  fd.append("name", name);
+  fd.append("file", file);
+  return api(`/api/requests/${id}/requirements`, { method: "POST", body: fd });
+}
+
+/* ---------- Blur check (images) ---------- */
+async function checkImage(file) {
+  if (file.size > 10 * 1024 * 1024) return { ok: false, reason: "File is over 10 MB." };
+  if (!file.type.startsWith("image/")) return { ok: true };
+  let bmp;
+  try { bmp = await createImageBitmap(file); }
+  catch { return { ok: false, reason: "Cannot read this image. Use JPG or PNG." }; }
+  if (Math.min(bmp.width, bmp.height) < MIN_SIDE) return { ok: false, reason: "Resolution is too low. Retake the photo closer." };
+  const scale = Math.min(1, 800 / Math.max(bmp.width, bmp.height));
+  const w = Math.round(bmp.width * scale), h = Math.round(bmp.height * scale);
+  const canvas = document.createElement("canvas");
+  canvas.width = w; canvas.height = h;
+  const ctx = canvas.getContext("2d", { willReadFrequently: true });
+  ctx.drawImage(bmp, 0, 0, w, h);
+  const px = ctx.getImageData(0, 0, w, h).data;
+  const g = new Float32Array(w * h);
+  for (let i = 0; i < g.length; i++) g[i] = 0.299 * px[i * 4] + 0.587 * px[i * 4 + 1] + 0.114 * px[i * 4 + 2];
+  let sum = 0, sumSq = 0, n = 0;
+  for (let y = 1; y < h - 1; y++) for (let x = 1; x < w - 1; x++) {
+    const i = y * w + x;
+    const lap = g[i - w] + g[i + w] + g[i - 1] + g[i + 1] - 4 * g[i];
+    sum += lap; sumSq += lap * lap; n++;
+  }
+  const variance = sumSq / n - (sum / n) ** 2;
+  console.log("Sharpness score:", Math.round(variance), "(needs", BLUR_THRESHOLD + ")");
+  return variance >= BLUR_THRESHOLD ? { ok: true } : { ok: false, reason: "Too blurry. Please retake the photo." };
+}
+
+/* ---------- E-signature: remove the paper background, crop, shrink ---------- */
+async function cleanSignature(file) {
+  if (file.size > 10 * 1024 * 1024) throw new Error("File is over 10 MB.");
+  if (!file.type.startsWith("image/")) return file;
+  let bmp;
+  try { bmp = await createImageBitmap(file); } catch { throw new Error("Cannot read this image. Try JPG or PNG."); }
+  const sc = Math.min(1, 1200 / Math.max(bmp.width, bmp.height));
+  const w = Math.max(1, Math.round(bmp.width * sc)), h = Math.max(1, Math.round(bmp.height * sc));
+  const cv = document.createElement("canvas"); cv.width = w; cv.height = h;
+  const cx = cv.getContext("2d", { willReadFrequently: true });
+  cx.drawImage(bmp, 0, 0, w, h);
+  const img = cx.getImageData(0, 0, w, h), d = img.data, n = w * h;
+  const lum = new Float32Array(n), hist = new Uint32Array(256);
+  for (let i = 0; i < n; i++) { const l = 0.299 * d[i * 4] + 0.587 * d[i * 4 + 1] + 0.114 * d[i * 4 + 2]; lum[i] = l; hist[l | 0]++; }
+  let acc = 0, paper = 255;
+  for (let v = 0; v < 256; v++) { acc += hist[v]; if (acc >= n * 0.9) { paper = v; break; } }
+  const hi = paper * 0.9, lo = paper * 0.5;
+  let x0 = w, y0 = h, x1 = -1, y1 = -1;
+  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+    const i = y * w + x, a = Math.min(1, Math.max(0, (hi - lum[i]) / (hi - lo)));
+    d[i * 4] *= 0.6; d[i * 4 + 1] *= 0.6; d[i * 4 + 2] *= 0.6; d[i * 4 + 3] = Math.round(a * 255);
+    if (a > 0.3) { if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y; }
+  }
+  if (x1 < 0) throw new Error("No signature found. Use dark ink on blank white paper.");
+  cx.putImageData(img, 0, 0);
+  const pad = 8; x0 = Math.max(0, x0 - pad); y0 = Math.max(0, y0 - pad); x1 = Math.min(w - 1, x1 + pad); y1 = Math.min(h - 1, y1 + pad);
+  const cw = x1 - x0 + 1, ch = y1 - y0 + 1, k = Math.min(1, 600 / cw, 200 / ch);
+  const out = document.createElement("canvas"); out.width = Math.max(1, Math.round(cw * k)); out.height = Math.max(1, Math.round(ch * k));
+  out.getContext("2d").drawImage(cv, x0, y0, cw, ch, 0, 0, out.width, out.height);
+  const blob = await new Promise((res) => out.toBlob(res, "image/png"));
+  return new File([blob], "e-signature.png", { type: "image/png" });
+}
+
+/* ---------- Add 201 form (9 steps) ---------- */
+const COMPANIES = ["Prestige", "Regcris", "Tmarks", "CoMerch"];
+const CIVIL = ["Single", "Married", "Widowed", "Separated", "Annulled"];
+const EMPST = ["Probationary", "Regular", "Project Based", "Casual", "Temporary"];
+const EDU = ["Elementary", "High School", "Senior High School", "Vocational / Technical", "College Undergraduate", "College Graduate", "Post Graduate"];
+const GOVDOCS = ["Passport", "Driver's License", "UMID", "PhilSys National ID", "PRC ID", "Postal ID", "Voter's ID / Certificate", "SSS ID", "PhilHealth ID", "Pag-IBIG ID", "TIN ID", "NBI Clearance", "Police Clearance", "Barangay Clearance", "Senior Citizen ID", "PWD ID", "OWWA ID", "Seaman's Book"];
+const DOCS = [
+  { k: "2x2 ID Photo", l: "2x2 ID Photo", photo: 1 },
+  { k: "E-Signature", l: "E-Signature", sig: 1 },
+  { k: "PSA Birth Certificate", l: "Birth Certificate" },
+  { k: "SSS", l: "SSS ID / E-1 / E-4 / SSS Document" },
+  { k: "PhilHealth", l: "PhilHealth ID or Member Data Record (MDR) Document" },
+  { k: "Pag-IBIG", l: "Pag-IBIG ID or Member Data Form (MDF) Document" },
+  { k: "TIN", l: "BIR / TIN ID or Form 1902 or Form 1904 Document" }
+];
+const F = (n, l, x = {}) => ({ n, l, ...x });
+const SEC = [
+  {
+    t: "Supervisor", h: "Supervisor Information", f: [
+      F("company", "Company", { o: COMPANIES, r: 1 }),
+      F("supervisorName", "Supervisor name", { r: 1, ro: 1 }),
+      F("supervisorEmail", "Supervisor email", { r: 1, ro: 1, type: "email" }),
+      F("supervisorMobile", "Supervisor mobile number", { r: 1, fmt: "mob", pat: "09\\d{9}", ph: "09XXXXXXXXX" })]
+  },
+  {
+    t: "Personal", h: "Employee Personal Information", f: [
+      F("lastName", "Last name", { r: 1 }), F("firstName", "First name", { r: 1 }), F("middleName", "Middle name", { r: 1 }),
+      F("suffix", "Suffix"), F("nickname", "Nickname", { r: 1 }),
+      F("dob", "Date of birth", { r: 1, type: "date" }), F("pob", "Place of birth", { r: 1 }),
+      F("sex", "Sex", { r: 1, o: ["Male", "Female"] }), F("civilStatus", "Civil status", { r: 1, o: CIVIL }),
+      F("nationality", "Nationality", { r: 1 }),
+      F("residence", "Complete address", {
+        r: 1,
+        hint: "(Unit / House / Building No., Street Name & Subdivision, Barangay, City or Municipality)",
+        ph: "e.g. Unit 5, 123 Rizal St., Brgy. San Antonio, Makati City"
+      }),
+      F("empEmail", "Employee's email", { r: 1, type: "email" }),
+      F("mobile", "Employee's mobile number", { r: 1, fmt: "mob", pat: "09\\d{9}", ph: "09XXXXXXXXX" })]
+  },
+  {
+    t: "Family", h: "Family Information", f: [
+      F("fatherName", "Father's full name"), F("motherName", "Mother's full name"),
+      F("spouse", "Spouse / Partner name (if applicable)"), F("dependents", "Number of dependents", { type: "number" })]
+  },
+  {
+    t: "Employment", h: "Employment Information", f: [
+      F("position", "Position", { r: 1 }), F("dateHired", "Date hired", { type: "date" }),
+      F("empStatus", "Employment status", { o: EMPST }),
+      F("client", "Client / Account", { o: [], dis: 1, r: 1 }), F("deptCode", "Department code", { o: [], dis: 1, r: 1 }),
+      F("workArea", "Assigned work area", { r: 1, o: ["Luzon", "Visayas", "Mindanao"] }),
+      F("region", "Region", { o: [], dis: 1, r: 1 }),
+      F("province", "Province", { o: [], dis: 1, r: 1 }),
+      F("city", "City / Municipality", { o: [], dis: 1, r: 1 })]
+  },
+  {
+    t: "Gov't IDs", h: "Government Information", f: [
+      F("sss", "SSS number", { r: 1, fmt: "sss", pat: "\\d{2}-\\d{7}-\\d", ph: "00-0000000-0" }),
+      F("philhealth", "PhilHealth number", { r: 1, fmt: "ph", pat: "\\d{2}-\\d{9}-\\d", ph: "00-000000000-0" }),
+      F("pagibig", "Pag-IBIG number", { r: 1, fmt: "pag", pat: "\\d{4}-\\d{4}-\\d{4}", ph: "0000-0000-0000" }),
+      F("tin", "BIR TIN", { r: 1, fmt: "tin", pat: "\\d{3}-\\d{3}-\\d{3}(-\\d{3})?", ph: "000-000-000-000" })]
+  },
+  {
+    t: "Emergency", h: "Emergency Contact", f: [
+      F("ecName", "Emergency contact name", { r: 1 }), F("ecRelationship", "Relationship", { r: 1 }),
+      F("ecMobile", "Emergency contact mobile number", { r: 1, fmt: "mob", pat: "09\\d{9}", ph: "09XXXXXXXXX" }),
+      F("ecAddress", "Emergency contact address", { r: 1 })]
+  },
+  {
+    t: "Education", h: "Education & Previous Employment", f: [
+      F("education", "Highest educational attainment", { r: 1, o: EDU }), F("school", "School / University", { r: 1 }),
+      F("course", "Course / Degree", { r: 1 }), F("yearGrad", "Year graduated / Last year in school", { r: 1 }),
+      F("prevWork", "Does the employee have previous work experience?", { r: 1, o: ["Yes", "No"] }),
+      F("prevDetails", "Previous employer, position & years", { hide: 1 })]
+  }
+];
+const NUMGRP = { sss: [2, 7, 1], ph: [2, 9, 1], pag: [4, 4, 4], tin: [3, 3, 3, 3], mob: [11] };
+
+const fieldHTML = (f) => {
+  const id = "f_" + f.n, req = f.r ? " required" : "";
+  const inp = f.o
+    ? `<select id="${id}" name="${f.n}"${req}${f.dis ? " disabled" : ""}><option value="">-- Select --</option>${f.o.map((o) => `<option>${esc(o)}</option>`).join("")}</select>`
+    : `<input id="${id}" name="${f.n}" type="${f.type || "text"}"${req}${f.ro ? " readonly" : ""}${f.fmt ? ` data-fmt="${f.fmt}" inputmode="numeric" pattern="${f.pat}" placeholder="${f.ph}"` : (f.ph ? ` placeholder="${esc(f.ph)}"` : "")}>`;
+  return `<div id="w_${f.n}"${f.hide ? " hidden" : ""}><label for="${id}">${esc(f.l)}${f.r ? " *" : ""}</label>${f.hint ? `<p class="hint">${esc(f.hint)}</p>` : ""}${inp}</div>`;
+};
+const slotHTML = (k, l, req) => `<div class="slot" data-k="${esc(k)}"><label>${esc(l)}${req ? " *" : ""}</label>
+  <div class="btns"><button type="button" data-src="cam">📷 Take photo</button><button type="button" data-src="up">Upload ${k === "2x2 ID Photo" ? "photo" : "file"}</button></div><div class="st"></div></div>`;
+
+const sigHTML = (k, l) => `<div class="slot" data-k="${esc(k)}"><label>${esc(l)} *</label>
+  <p class="hint">Sign on the blank paper below. You can also upload a photo of your signature on white paper; the background is removed automatically.</p>
+  <canvas id="sigCv" class="sigcv" width="600" height="200"></canvas>
+  <div class="btns" style="margin-top:6px"><button type="button" data-clear>Clear</button><button type="button" data-src="up">Upload signature image</button></div>
+  <img id="sigPrev" class="sigprev" alt="Signature preview" hidden><div class="st"></div></div>`;
+
+const STEPS = [...SEC.map((s) => s.t), "Documents", "Review"];
+const LAST = STEPS.length - 1;
+$("stepsBox").innerHTML =
+  SEC.map((s, i) => `<section class="step" data-step="${i}"${i ? " hidden" : ""}><h3>${esc(s.h)}</h3>${s.f.map(fieldHTML).join("")}</section>`).join("") +
+  `<section class="step" data-step="7" hidden><fieldset class="reqset"><legend>Employee 201 Documents</legend>
+    <p class="hint">JPG, PNG or PDF, up to 10 MB. Blurry photos are rejected, so retake them.</p>
+    ${DOCS.map((d) => d.sig ? sigHTML(d.k, d.l) : slotHTML(d.k, d.l, true)).join("")}
+    <div class="slot" data-k="__extra"><label for="extraType">Additional government document (optional)</label>
+      <select id="extraType"><option value="">-- Document / ID type --</option>${GOVDOCS.map((o) => `<option>${esc(o)}</option>`).join("")}</select>
+      <div class="btns" style="margin-top:8px"><button type="button" data-src="cam">📷 Take photo</button><button type="button" data-src="up">Upload file</button></div><div class="st"></div></div>
+  </fieldset></section>
+  <section class="step" data-step="8" hidden><div class="review" id="review"></div>
+    <div class="missing" id="missing" aria-live="polite"></div>
+    <p class="hint" style="margin-top:10px">Once submitted, this record can no longer be viewed from this account (employee privacy). Please review everything above before you submit.</p>
+    <label for="remarks">Remarks</label>
+    <textarea id="remarks" name="remarks" placeholder="e.g. Kulang ng SSS at Pag-IBIG"></textarea>
+    <div class="msg" id="formMsg" role="status" aria-live="polite"></div></section>`;
+$("steps").innerHTML = STEPS.map((t, i) => `<li data-i="${i}"><span class="num">${i + 1}</span><span class="lbl">${esc(t)}</span></li>`).join("");
+
+/* ---------- Client / Department selects (data in recruitment-data.js) ---------- */
+function fillSelect(sel, list) {
+  sel.innerHTML = `<option value="">-- Select --</option>` +
+    list.map(([v, l]) => `<option value="${esc(v)}">${esc(l)}</option>`).join("");
+  sel.disabled = !list.length;
+}
+
+$("f_company").addEventListener("change", (e) => {
+  fillSelect($("f_client"), CLIENTS[e.target.value] || []);
+  fillSelect($("f_deptCode"), []);
+});
+$("f_client").addEventListener("change", (e) => {
+  fillSelect($("f_deptCode"), DEPTS[e.target.value] || []);
+});
+
+/* ---------- Work assignment: Area → Region → Province → City/Municipality (PSGC API) ---------- */
+const PSGC = "https://psgc.gitlab.io/api";
+const geoCache = {};
+async function geo(path) {
+  if (!geoCache[path]) {
+    const r = await fetch(PSGC + path);
+    if (!r.ok) throw new Error("Cannot load locations. Check your internet connection.");
+    const data = await r.json();
+    geoCache[path] = data.sort((a, b) => a.name.localeCompare(b.name));
+  }
+  return geoCache[path];
+}
+function fillGeo(sel, list, ph = "-- Select --") {
+  sel.innerHTML = `<option value="">${ph}</option>` +
+    list.map((x) => `<option value="${esc(x.label || x.name)}" data-code="${esc(x.code)}">${esc(x.label || x.name)}</option>`).join("");
+  sel.disabled = !list.length;
+}
+const geoCode = (sel) => sel.selectedOptions[0]?.dataset.code || "";
+const clearGeo = (...ids) => ids.forEach((id) => fillGeo($("f_" + id), []));
+const geoLoading = (id) => { const s = $("f_" + id); s.innerHTML = `<option value="">Loading...</option>`; s.disabled = true; };
+const geoFail = (e) => { toast(e.message || "Cannot load locations."); };
+
+$("f_workArea").addEventListener("change", async (e) => {
+  clearGeo("region", "province", "city");
+  if (!e.target.value) return;
+  geoLoading("region");
+  try {
+    const all = await geo("/regions/");
+    const list = all.filter((r) => String(r.islandGroupCode || "").toLowerCase() === e.target.value.toLowerCase())
+      .map((r) => ({ code: r.code, name: r.name, label: r.regionName ? `${r.regionName} – ${r.name}` : r.name }));
+    fillGeo($("f_region"), list);
+  } catch (err) { clearGeo("region"); geoFail(err); }
+});
+
+$("f_region").addEventListener("change", async (e) => {
+  clearGeo("province", "city");
+  const c = geoCode(e.target);
+  if (!c) return;
+  geoLoading("province");
+  try {
+    const provs = await geo(`/regions/${c}/provinces/`);
+    if (provs.length) { fillGeo($("f_province"), provs); return; }
+    // No provinces (e.g. NCR): skip province, load cities directly from the region
+    const p = $("f_province");
+    p.innerHTML = `<option value="N/A" selected>N/A (no province)</option>`; p.disabled = true;
+    geoLoading("city");
+    fillGeo($("f_city"), await geo(`/regions/${c}/cities-municipalities/`));
+  } catch (err) { clearGeo("province", "city"); geoFail(err); }
+});
+
+$("f_province").addEventListener("change", async (e) => {
+  clearGeo("city");
+  const c = geoCode(e.target);
+  if (!c) return;
+  geoLoading("city");
+  try { fillGeo($("f_city"), await geo(`/provinces/${c}/cities-municipalities/`)); }
+  catch (err) { clearGeo("city"); geoFail(err); }
+});
+
+/* number formats */
+$("reqForm").addEventListener("input", (e) => {
+  const g = NUMGRP[e.target.dataset.fmt];
+  if (!g) return;
+  const d = e.target.value.replace(/\D/g, "").slice(0, g.reduce((a, b) => a + b));
+  const out = []; let p = 0;
+  for (const n of g) { if (p >= d.length) break; out.push(d.slice(p, p + n)); p += n; }
+  e.target.value = out.join("-");
+});
+$("f_prevWork").addEventListener("change", (e) => { $("w_prevDetails").hidden = e.target.value !== "Yes"; });
+
+/* documents: take photo / upload */
+let docs = {}, curSlot = null;
+const docName = (k) => k === "__extra" ? ($("extraType").value ? "Additional: " + $("extraType").value : "") : k;
+$("stepsBox").addEventListener("click", (e) => {
+  if (e.target.closest("[data-clear]")) return sigClear();
+  const b = e.target.closest("button[data-src]");
+  if (!b) return;
+  const slot = b.closest(".slot");
+  curSlot = slot;
+  const photo = slot.dataset.k === "2x2 ID Photo";
+  const inp = b.dataset.src === "cam" ? $("camIn") : $("upIn");
+  if (b.dataset.src === "cam") inp.setAttribute("capture", photo ? "user" : "environment");
+  else inp.accept = slot.dataset.k === "E-Signature" ? "image/*,.pdf" : photo ? ".jpg,.jpeg,.png" : ACCEPT;
+  inp.click();
+});
+async function onDoc(e) {
+  const file = e.target.files[0]; e.target.value = "";
+  if (!file || !curSlot) return;
+  const slot = curSlot, k = slot.dataset.k, st = slot.querySelector(".st");
+  st.className = "st"; st.textContent = "Checking...";
+  let r, f = file;
+  if (k === "E-Signature") { try { f = await cleanSignature(file); r = { ok: true }; } catch (err) { r = { ok: false, reason: err.message }; } }
+  else r = await checkImage(file);
+  if (!r.ok) { delete docs[k]; st.textContent = r.reason; st.className = "st err"; if (k === "E-Signature") showSigPrev(null); }
+  else {
+    docs[k] = f; st.className = "st ok";
+    if (k === "E-Signature") { st.textContent = f !== file ? "✓ Background removed" : "✓ " + file.name; showSigPrev(f); }
+    else st.textContent = "✓ " + file.name;
+  }
+  refreshMissing();
+}
+$("camIn").addEventListener("change", onDoc);
+$("upIn").addEventListener("change", onDoc);
+
+/* e-signature pad */
+function makePad(cv, onEnd) {
+  const c = cv.getContext("2d");
+  const reset = () => { c.clearRect(0, 0, cv.width, cv.height); c.strokeStyle = "#111"; c.lineWidth = 3; c.lineCap = "round"; c.lineJoin = "round"; };
+  reset();
+  let drawing = false, inked = false;
+  const pt = (e) => { const r = cv.getBoundingClientRect(); return [(e.clientX - r.left) * cv.width / r.width, (e.clientY - r.top) * cv.height / r.height]; };
+  cv.addEventListener("pointerdown", (e) => { drawing = inked = true; cv.setPointerCapture(e.pointerId); const [x, y] = pt(e); c.beginPath(); c.moveTo(x, y); c.lineTo(x + 0.1, y + 0.1); c.stroke(); });
+  cv.addEventListener("pointermove", (e) => { if (!drawing) return; const [x, y] = pt(e); c.lineTo(x, y); c.stroke(); });
+  const end = () => { if (!drawing) return; drawing = false; if (onEnd) onEnd(); };
+  cv.addEventListener("pointerup", end);
+  cv.addEventListener("pointercancel", end);
+  return {
+    reset: () => { reset(); inked = false; },
+    toFile: () => new Promise((res) => cv.toBlob((bl) => res(new File([bl], "e-signature.png", { type: "image/png" })), "image/png"))
+  };
+}
+let sigPrevUrl = null;
+function showSigPrev(f) {
+  const el = $("sigPrev");
+  if (sigPrevUrl) { URL.revokeObjectURL(sigPrevUrl); sigPrevUrl = null; }
+  if (!f || !f.type.startsWith("image/")) { el.hidden = true; return; }
+  sigPrevUrl = URL.createObjectURL(f); el.src = sigPrevUrl; el.hidden = false;
+}
+const formPad = makePad($("sigCv"), async () => {
+  showSigPrev(null);
+  docs["E-Signature"] = await formPad.toFile();
+  const st = $("sigCv").closest(".slot").querySelector(".st"); st.textContent = "✓ Signature captured"; st.className = "st ok";
+  refreshMissing();
+});
+function sigClear() {
+  formPad.reset(); showSigPrev(null); delete docs["E-Signature"];
+  const st = $("sigCv").closest(".slot").querySelector(".st"); st.textContent = ""; st.className = "st";
+  refreshMissing();
+}
+
+/* steps */
+let step = 0;
+function stepValid(i, report = true) {
+  const sec = document.querySelector(`#reqForm .step[data-step="${i}"]`);
+  for (const el of sec.querySelectorAll("input[required],select[required]")) {
+    if (el.disabled) continue;
+    if (!el.checkValidity()) { if (report) { el.classList.remove("shake-x"); void el.offsetWidth; el.classList.add("shake-x"); el.reportValidity(); } return false; }
+  }
+  return true;
+}
+let previewUrls = [];
+const freePreviews = () => { previewUrls.forEach((u) => URL.revokeObjectURL(u)); previewUrls = []; };
+const val = (n) => ($("f_" + n)?.value || "").trim();
+const missingNow = () => REQS.filter((k) => !docs[k]);
+
+function renderReview() {
+  freePreviews();
+  const missing = missingNow(), done = !missing.length;
+  const sections = SEC.map((s) => `<h3 class="rv-h">${esc(s.h)}</h3><dl class="rv-dl" style="grid-template-columns:170px 1fr">
+    ${s.f.filter((f) => !f.hide || val(f.n)).map((f) => `<dt>${esc(f.l)}</dt><dd>${esc(val(f.n) || "—")}</dd>`).join("")}</dl>`).join("");
+  const extra = docs.__extra ? [{ k: "__extra", n: docName("__extra") || "Additional (no type chosen)" }] : [];
+  const list = [...DOCS.map((d) => ({ k: d.k, n: d.l })), ...extra].map(({ k, n }) => {
+    const f = docs[k];
+    if (!f) return `<li class="pv miss"><span class="thumb">—</span><div class="pv-info"><strong>${esc(n)}</strong><span class="warn">Missing</span></div></li>`;
+    const url = URL.createObjectURL(f); previewUrls.push(url);
+    const th = f.type.startsWith("image/") ? `<img src="${url}" alt="${esc(n)}">` : `<span class="pdf">PDF</span>`;
+    return `<li class="pv"><a class="thumb" href="${url}" target="_blank" rel="noopener">${th}</a><div class="pv-info"><strong>${esc(n)}</strong><span class="sub">${esc(f.name)}</span></div></li>`;
+  }).join("");
+  $("review").innerHTML = `<div class="rv-top"><div class="rv-name">${esc([val("firstName"), val("middleName"), val("lastName"), val("suffix")].filter(Boolean).join(" "))}</div>
+    <span class="pill ${done ? "complete" : "pending"}">${done ? "Complete" : "Pending"}</span></div>
+    ${sections}<h3 class="rv-h">Documents · ${REQS.length - missing.length} of ${REQS.length} attached</h3><ul class="pvlist">${list}</ul>`;
+}
+
+function goTo(n) {
+  const old = step;
+  step = Math.max(0, Math.min(LAST, n));
+  document.querySelectorAll("#reqForm .step").forEach((s) => { s.hidden = Number(s.dataset.step) !== step; s.classList.remove("in-fwd", "in-back"); });
+  const cur = document.querySelector(`#reqForm .step[data-step="${step}"]`);
+  [...cur.children].forEach((c, i) => c.style.setProperty("--d", Math.min(i, 10)));
+  void cur.offsetWidth; cur.classList.add(step >= old ? "in-fwd" : "in-back");
+  document.querySelectorAll("#steps li").forEach((li) => {
+    const i = Number(li.dataset.i);
+    li.classList.toggle("on", i === step); li.classList.toggle("done", i < step);
+    li.querySelector(".num").textContent = i < step ? "✓" : String(i + 1);
+  });
+  $("bar").style.width = ((step + 1) / STEPS.length * 100) + "%";
+  $("prevBtn").hidden = step === 0;
+  $("nextBtn").hidden = step === LAST;
+  $("saveBtn").hidden = step !== LAST;
+  if (step === LAST) { refreshMissing(); renderReview(); }
+  $("reqForm").scrollTop = 0;
+}
+$("nextBtn").addEventListener("click", () => { if (stepValid(step)) goTo(step + 1); });
+$("prevBtn").addEventListener("click", () => goTo(step - 1));
+
+let remarksEdited = false;
+$("remarks").addEventListener("input", () => { remarksEdited = true; });
+function refreshMissing() {
+  const missing = missingNow(), el = $("missing");
+  el.className = "missing" + (missing.length ? "" : " done");
+  el.textContent = missing.length ? "Missing: " + missing.map((k) => DOCS.find((d) => d.k === k).l).join(", ") : "All requirements attached.";
+  if (!remarksEdited) $("remarks").value = missing.length ? "Kulang: " + missing.join(", ") : "";
+  return missing;
+}
+
+function resetForm() {
+  remarksEdited = false; docs = {}; formPad.reset(); showSigPrev(null);
+  $("reqForm").reset();
+  fillSelect($("f_client"), []);
+  fillSelect($("f_deptCode"), []);
+  clearGeo("region", "province", "city");
+  $("w_prevDetails").hidden = true;
+  document.querySelectorAll("#reqForm .slot .st").forEach((s) => { s.textContent = ""; s.className = "st"; });
+  say("formMsg", "");
+  refreshMissing(); goTo(0);
+}
+
+/* Open the fill-up form (called by the 201 Submission card) */
+let me = { name: "", email: "" };
+function openForm() {
+  resetForm();
+  $("f_supervisorName").value = me.name; $("f_supervisorEmail").value = me.email;
+  $("dlg").showModal();
+}
+$("cancelBtn").addEventListener("click", () => closeAnim($("dlg")));
+$("dlg").addEventListener("close", freePreviews);
+
+$("reqForm").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  if (step < LAST) { if (stepValid(step)) goTo(step + 1); return; }
+  for (let i = 0; i < LAST; i++) if (i !== 7 && !stepValid(i, false)) { goTo(i); stepValid(i); return; }
+  if (docs.__extra && !$("extraType").value) { goTo(7); say("formMsg", "Choose the type of the additional document.", "err"); return; }
+  const missing = refreshMissing();
+  if (missing.length && !$("remarks").value.trim()) { say("formMsg", "Add a remark about the missing files.", "err"); $("remarks").focus(); return; }
+  const btn = $("saveBtn"); btn.disabled = true; btn.classList.add("loading"); say("formMsg", "Saving...");
+  try {
+    const body = Object.fromEntries(new FormData(e.target));
+    body.fullName = [val("firstName"), val("middleName"), val("lastName"), val("suffix")].filter(Boolean).join(" ");
+    body.email = body.empEmail; body.contactNumber = body.mobile; body.address = body.residence; body.department = val("deptCode");
+    body.workArea = val("workArea"); body.region = val("region"); body.province = val("province"); body.cityMunicipality = val("city");
+    body.supervisorMobile = val("supervisorMobile");
+    const doc = await api("/api/requests", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+    const keys = Object.keys(docs), failed = [];
+    for (let i = 0; i < keys.length; i++) {
+      const name = docName(keys[i]);
+      say("formMsg", `Uploading ${name} (${i + 1}/${keys.length})...`);
+      try { await uploadFile(doc._id, name, docs[keys[i]]); } catch { failed.push(name); }
+    }
+    if (failed.length) say("formMsg", `Saved (Ref #${refOf(doc)}), but these files failed to upload: ${failed.join(", ")}.`, "err");
+    else {
+      btn.classList.remove("loading"); btn.classList.add("success");
+      await new Promise((r) => setTimeout(r, 900));
+      closeAnim($("dlg")); setTimeout(() => btn.classList.remove("success"), 300);
+      toast(`201 submitted. Reference #${refOf(doc)}`);
+    }
+  } catch (err) { say("formMsg", err.message, "err"); }
+  finally { btn.disabled = false; btn.classList.remove("loading"); }
+});
+
+goTo(0);
+
+guard("staff", (user, name) => { me = { name, email: user.email }; });
+  </script>
+</body>
+</html>
