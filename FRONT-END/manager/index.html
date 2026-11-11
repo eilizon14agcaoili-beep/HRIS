@@ -1,236 +1,1476 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
+<meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>GM Dashboard · Analytics</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<title>HR CONNECT| HRIS</title>
+<link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../shared/dashboard.css">
+<!-- PDF export libraries (jsPDF + autoTable) and ZIP library (JSZip). defer keeps them in this order. -->
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <style>
-:root{--bg:#070d24;--p:#0e1838;--p2:#142049;--ln:#1f2d5c;--tx:#eaf0ff;--mu:#8794c4;--bl:#4f8cff;--cy:#38d4ff;--gr:#35d8a4;--am:#ffb547;--rd:#ff6b81}
-*{box-sizing:border-box}
-body{margin:0;background:radial-gradient(1200px 500px at 70% -10%,#13286a 0%,transparent 60%),var(--bg);color:var(--tx);font:14px/1.45 Manrope,'Segoe UI',system-ui,sans-serif;display:flex;min-height:100vh}
-button,select,input{font:inherit;color:var(--tx)}
-:focus-visible{outline:2px solid var(--cy);outline-offset:2px}
-a{color:inherit;text-decoration:none}
-aside{display:flex;flex-direction:column;width:252px;flex-shrink:0;background:var(--p);border-right:1px solid var(--ln);padding:18px 12px;position:sticky;top:0;height:100vh;overflow:auto;transition:transform .25s}
-.brand{display:flex;gap:10px;align-items:center;padding:4px 8px 18px;font-weight:800;font-size:16px}
-.brand i{width:30px;height:30px;border-radius:9px;background:linear-gradient(135deg,var(--bl),var(--cy));display:grid;place-items:center;font-style:normal;color:#04112e}
-.nv{display:flex;align-items:center;justify-content:space-between;width:100%;padding:9px 12px;border:0;background:none;border-radius:9px;color:var(--mu);cursor:pointer;text-align:left;font-weight:600}
-.nv:hover,.nv.on{background:var(--p2);color:var(--tx)}
-.nv.on{box-shadow:inset 3px 0 0 var(--cy)}
-.sub{display:none;margin:2px 0 6px 14px;border-left:1px solid var(--ln);padding-left:6px}
-.grp.open .sub{display:block}.grp.open>.nv .ch{transform:rotate(90deg)}
-.ch{transition:transform .2s;font-size:11px}
-main{flex:1;min-width:0;padding:22px 28px 40px}
-.top{display:flex;flex-wrap:wrap;gap:12px;justify-content:space-between;align-items:center;margin-bottom:20px}
-.top h1{margin:0;font-size:24px;font-weight:800;letter-spacing:-.02em}
-.top small{display:block;color:var(--mu);font-weight:500;margin-top:2px}
-.tools{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
-select,input[type=search],.btn{background:var(--p);border:1px solid var(--ln);border-radius:10px;padding:8px 12px}
-.btn{cursor:pointer;font-weight:600}.btn:hover{border-color:var(--bl)}
-.btn.pri{background:var(--bl);border-color:var(--bl);color:#04112e}
-.chk{display:flex;gap:6px;align-items:center;color:var(--mu);font-weight:600;cursor:pointer}
-#burger{display:none}
-.card{background:linear-gradient(180deg,var(--p2),var(--p));border:1px solid var(--ln);border-radius:14px;padding:18px}
-.card h3{margin:0 0 12px;font-size:13px;font-weight:700;color:var(--mu);display:flex;justify-content:space-between;align-items:center;gap:8px}
-.g{display:grid;gap:14px;margin-bottom:14px}
-.hero{grid-template-columns:260px 1fr}.kp{grid-template-columns:repeat(4,1fr);gap:14px;display:grid}
-.c21{grid-template-columns:2fr 1fr}.c3{grid-template-columns:repeat(3,1fr)}.c11{grid-template-columns:1fr 1fr}
-.n{font-size:32px;font-weight:800;letter-spacing:-.03em;font-variant-numeric:tabular-nums}
-.dl{display:inline-block;font-size:12px;font-weight:700;border-radius:20px;padding:2px 8px;margin-top:6px}
-.up{background:rgba(53,216,164,.14);color:var(--gr)}.dn{background:rgba(255,107,129,.14);color:var(--rd)}.nu{background:var(--p2);color:var(--mu)}
-.ring{display:grid;place-items:center;position:relative}
-.ring b{position:absolute;font-size:30px;font-weight:800}.ring em{position:absolute;margin-top:46px;font-style:normal;color:var(--mu);font-size:12px}
-.ch-box{position:relative;height:280px}
-table{width:100%;border-collapse:collapse}
-th,td{text-align:left;padding:10px 8px;border-bottom:1px solid var(--ln)}
-th{color:var(--mu);font-weight:700;font-size:12px;cursor:pointer;user-select:none;white-space:nowrap}
-td.r,th.r{text-align:right}tr:hover td{background:rgba(79,140,255,.06)}
-.mt{height:6px;background:var(--p2);border-radius:4px;min-width:90px;overflow:hidden}.mt i{display:block;height:100%;background:linear-gradient(90deg,var(--bl),var(--cy));border-radius:4px}
-.tab{display:flex;gap:4px;background:var(--p);border:1px solid var(--ln);border-radius:9px;padding:3px}
-.tab button{border:0;background:none;border-radius:6px;padding:4px 10px;cursor:pointer;color:var(--mu);font-weight:600}.tab button.on{background:var(--bl);color:#04112e}
-.mini div{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--ln)}.mini div:last-child{border:0}
-.cal{display:grid;grid-template-columns:repeat(7,1fr);gap:5px;font-size:12px}
-.cal .h{text-align:center;color:var(--mu);font-weight:700}
-.cal .d{min-height:58px;border-radius:8px;background:var(--p);padding:5px 7px;border:1px solid transparent}
-.cal .d b{color:var(--mu);font-weight:600}.cal .ok{color:var(--gr)}.cal .lt{color:var(--rd);font-weight:700}
-.sk{background:linear-gradient(90deg,var(--p2) 25%,var(--ln) 50%,var(--p2) 75%);background-size:200% 100%;animation:sh 1.2s infinite;border-radius:14px;min-height:110px;margin-bottom:14px}
-@keyframes sh{to{background-position:-200% 0}}
-.msg{text-align:center;padding:60px 20px;color:var(--mu)}.msg h2{color:var(--tx)}
-.pill{background:rgba(255,181,71,.15);color:var(--am);border-radius:20px;padding:3px 10px;font-weight:700;font-size:12px}
-@media(max-width:1100px){.hero,.c21,.c3,.c11{grid-template-columns:1fr}.kp{grid-template-columns:1fr 1fr}}
-@media(max-width:860px){aside{position:fixed;z-index:20;transform:translateX(-100%)}aside.show{transform:none}#burger{display:inline-block}main{padding:16px}}
-@media print{aside,.tools{display:none}body{background:#fff;color:#000}.card{background:#fff;border-color:#ccc}}
-@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+  /* red and white theme (same as the recruitment page) */
+  body[data-role="staff"],body[data-role="manager"]{--bg:#fff;--surface:#fff;--ink:#2a1215;--muted:#7a5b5f;--line:#f0d4d6;--accent:#b91c1c;--accent-ink:#fff;--err:#b42318;--ok:#067647;--warn:#9a6700;background:linear-gradient(180deg,#fff 0%,#fdeaea 100%) fixed}
+  main{max-width:1280px}
+  .banner{display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap;padding:22px 28px;border-radius:16px;color:#fff;background:linear-gradient(120deg,#7f1d1d 0%,#b91c1c 55%,#ef4444 100%)}
+  .brandbox{display:flex;align-items:center;gap:16px}
+  .logo{width:48px;height:48px;border-radius:12px;background:rgba(255,255,255,.18);display:grid;place-items:center;font-weight:800}
+  .banner h1{margin:0;font-size:1.3rem;letter-spacing:.04em}
+  .banner .tagline{opacity:.9;font-size:.9rem}
+  .banner .tag{margin-top:4px;font-size:.68rem;letter-spacing:.12em;font-weight:700;opacity:.85}
+  .banner .who{color:#fff}
+  .banner .who button{background:rgba(255,255,255,.15);color:#fff;border-color:rgba(255,255,255,.45)}
+  .sec{margin:32px 0 2px;font-size:1.2rem;letter-spacing:.03em;color:#991b1b}
+  .secsub{margin:0 0 16px;color:var(--muted);font-size:.9rem}
+
+  /* ===== Application cards ===== */
+  .apps{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
+  .app{--mx:50%;--my:50%;position:relative;isolation:isolate;overflow:hidden;display:flex;flex-direction:column;justify-content:space-between;gap:20px;min-height:160px;width:100%;padding:18px;border:1px solid var(--line);border-radius:16px;background:var(--surface);text-align:left;font:inherit;color:inherit;cursor:pointer;transition:transform .25s cubic-bezier(.2,.8,.2,1),box-shadow .25s,border-color .25s;animation:cardIn .6s cubic-bezier(.2,.8,.2,1) backwards;animation-delay:calc(var(--i) * 70ms)}
+  @keyframes cardIn{from{opacity:0;transform:translateY(22px) scale(.96)}}
+  .app::before{content:"";position:absolute;inset:0;z-index:-1;opacity:0;transition:opacity .3s;background:radial-gradient(260px circle at var(--mx) var(--my),rgba(239,68,68,.16),transparent 70%)}
+  .app::after{content:"";position:absolute;left:0;right:0;top:0;height:3px;background:linear-gradient(90deg,#7f1d1d,#ef4444);transform:scaleX(0);transform-origin:left;transition:transform .35s}
+  .app:hover,.app:focus-visible{transform:translateY(-6px);border-color:var(--accent);box-shadow:0 14px 30px rgba(185,28,28,.18);outline:none}
+  .app:hover::before,.app:focus-visible::before{opacity:1}
+  .app:hover::after,.app:focus-visible::after{transform:scaleX(1)}
+  .app:active{transform:translateY(-2px) scale(.98)}
+  .app .top{display:flex;gap:12px;align-items:flex-start}
+  .app .ico{flex:none;width:42px;height:42px;border-radius:12px;background:#fee2e2;color:var(--accent);display:grid;place-items:center;transition:transform .35s cubic-bezier(.3,1.5,.5,1),background .25s,color .25s}
+  .app:hover .ico,.app:focus-visible .ico{transform:rotate(-8deg) scale(1.12);background:var(--accent);color:#fff}
+  .app .n{font-size:.66rem;letter-spacing:.1em;font-weight:700;color:var(--muted)}
+  .app strong{display:block;margin-top:2px;font-size:1rem;line-height:1.3}
+  .app .go{display:flex;align-items:center;gap:8px;font-size:.7rem;font-weight:700;letter-spacing:.08em;color:var(--accent)}
+  .app .go i{font-style:normal;transition:transform .25s}
+  .app:hover .go i{transform:translateX(6px)}
+  .app .live{flex:none;width:8px;height:8px;border-radius:50%;background:#22c55e;animation:pulse 1.6s infinite}
+  @keyframes pulse{0%{box-shadow:0 0 0 0 rgba(34,197,94,.6)}70%,100%{box-shadow:0 0 0 8px rgba(34,197,94,0)}}
+  .badge{position:absolute;top:14px;right:14px;padding:3px 10px;border-radius:999px;font-size:.68rem;font-weight:800;color:#1e40af;background:#dbeafe;border:1px solid #93c5fd;animation:pop .4s cubic-bezier(.3,1.5,.5,1)}
+  .app.soon{background:rgba(255,255,255,.6)}
+  .app.soon .ico{background:#f5eaea;color:#b9a3a6}
+  .app.soon:hover,.app.soon:focus-visible{border-color:var(--line);box-shadow:0 8px 18px rgba(0,0,0,.06);transform:translateY(-3px)}
+  .app.soon:hover .ico,.app.soon:focus-visible .ico{background:#f5eaea;color:#b9a3a6;transform:rotate(8deg)}
+  .app.soon::after,.app.soon::before{display:none}
+  .app.soon .n,.app.soon strong{opacity:.75}
+  .app.soon .go{color:var(--muted)}
+  .app.soon.shake{animation:shake .4s}
+  @keyframes shake{25%{transform:translateX(-5px)}50%{transform:translateX(5px)}75%{transform:translateX(-3px)}}
+  @keyframes pop{from{opacity:0;transform:scale(.4)}}
+
+  .toast{position:fixed;left:50%;bottom:28px;z-index:99;padding:12px 20px;border-radius:999px;background:#2a1215;color:#fff;font-weight:600;font-size:.9rem;box-shadow:0 10px 30px rgba(0,0,0,.3);transform:translate(-50%,30px);opacity:0;pointer-events:none;transition:transform .3s,opacity .3s}
+  .toast.show{transform:translate(-50%,0);opacity:1}
+  .view-in{animation:viewIn .35s cubic-bezier(.2,.8,.2,1)}
+  @keyframes viewIn{from{opacity:0;transform:translateY(14px)}}
+
+  .back{margin:24px 0 12px;padding:6px 0;border:0;background:none;color:var(--accent);font-weight:700;cursor:pointer;transition:transform .2s}
+  .back:hover{transform:translateX(-4px)}
+  .box-head{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:16px;flex-wrap:wrap}
+  .box-head h2{margin:0}
+  .tools{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+  .count{color:var(--muted);font-size:.85rem;font-weight:600}
+  .sub{color:var(--muted);font-size:.8rem}
+  .warn{color:var(--warn);font-weight:600}
+  .ok{color:var(--ok);font-weight:600}
+  .err{color:var(--err)}
+  .st{font-size:.85rem;min-height:1.2em;margin-top:8px;color:var(--muted)}
+  .st.ok{color:var(--ok)}.st.err{color:var(--err)}
+
+  /* ===== Search / sort row ===== */
+  .filters{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:14px}
+  .search{position:relative;flex:1 1 260px;max-width:420px}
+  .search svg{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:#b9a3a6;pointer-events:none;transition:color .2s}
+  .search input{width:100%;box-sizing:border-box;padding:10px 14px 10px 38px;border:1px solid var(--line);border-radius:12px;font:inherit;color:var(--ink);background:#fff;transition:border-color .2s,box-shadow .2s}
+  .search input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px rgba(185,28,28,.15)}
+  .search:focus-within svg{color:var(--accent)}
+  .filters select{padding:10px 12px;border:1px solid var(--line);border-radius:12px;font:inherit;color:var(--ink);background:#fff;cursor:pointer}
+  .filters select:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px rgba(185,28,28,.15)}
+  .filters .count{margin-left:auto}
+
+  /* Refresh */
+  #refreshBtn{display:inline-flex;align-items:center;gap:6px}
+  #refreshBtn svg{transition:transform .5s}
+  #refreshBtn:hover svg{transform:rotate(180deg)}
+  #refreshBtn.spin svg{animation:pbSpin .7s linear infinite}
+
+  /* Download PDF button */
+  button.pdfbtn{position:relative;overflow:hidden;display:inline-flex;align-items:center;gap:8px;padding:8px 16px;border:0;border-radius:10px;font-size:.85rem;font-weight:700;white-space:nowrap;cursor:pointer;background:linear-gradient(120deg,#ef4444,#b91c1c);color:#fff;box-shadow:0 4px 12px rgba(185,28,28,.25);transition:transform .15s,filter .2s,background .35s,box-shadow .35s}
+  button.pdfbtn:hover{filter:brightness(1.07)}
+  button.pdfbtn:active:not(:disabled){transform:scale(.96)}
+  button.pdfbtn:disabled{background:#e9dcdd;color:#9a8588;box-shadow:none;cursor:not-allowed}
+  .pdfbtn .pb-ico{position:relative;width:16px;height:16px;flex:none}
+  .pdfbtn .pb-ico svg{position:absolute;inset:0;width:100%;height:100%;opacity:0;transform:scale(.4);transition:opacity .25s,transform .35s cubic-bezier(.34,1.56,.64,1)}
+  .pdfbtn .pb-arrow{opacity:1;transform:none}
+  .pdfbtn:hover:not(:disabled) .pb-arrow{animation:pbBob .7s ease-in-out infinite}
+  .pdfbtn.is-loading{pointer-events:none;filter:none;box-shadow:0 6px 18px rgba(185,28,28,.35)}
+  .pdfbtn.is-loading .pb-arrow{opacity:0;transform:translateY(8px) scale(.4)}
+  .pdfbtn.is-loading .pb-ring{opacity:1;transform:none;animation:pbSpin .8s linear infinite}
+  .pdfbtn.is-loading::before{content:"";position:absolute;inset:0;background:linear-gradient(105deg,transparent 30%,rgba(255,255,255,.35) 50%,transparent 70%);transform:translateX(-100%);animation:pbShine 1.2s ease-in-out infinite}
+  .pdfbtn.is-loading::after{content:"";position:absolute;left:0;bottom:0;height:3px;width:40%;border-radius:3px;background:rgba(255,255,255,.9);animation:pbBar 1.1s cubic-bezier(.65,0,.35,1) infinite}
+  .pdfbtn.is-loading .pb-txt{animation:pbPulse 1.2s ease-in-out infinite}
+  .pdfbtn.is-done{pointer-events:none;background:linear-gradient(120deg,#22c55e,#15803d);box-shadow:0 6px 18px rgba(21,128,61,.4);animation:pbPop .45s cubic-bezier(.34,1.56,.64,1)}
+  .pdfbtn.is-done .pb-arrow,.pdfbtn.is-done .pb-ring{opacity:0}
+  .pdfbtn.is-done .pb-tick{opacity:1;transform:none}
+  .pdfbtn.is-done .pb-tick path{stroke-dasharray:24;stroke-dashoffset:24;animation:pbDraw .4s .1s ease-out forwards}
+  @keyframes pbSpin{to{transform:rotate(360deg)}}
+  @keyframes pbShine{to{transform:translateX(100%)}}
+  @keyframes pbBar{0%{transform:translateX(-100%)}100%{transform:translateX(260%)}}
+  @keyframes pbPulse{50%{opacity:.65}}
+  @keyframes pbBob{50%{transform:translateY(2px)}}
+  @keyframes pbDraw{to{stroke-dashoffset:0}}
+  @keyframes pbPop{0%{transform:scale(.9)}100%{transform:scale(1)}}
+  @keyframes pbRowBounce{0%,100%{transform:translateY(-2px)}50%{transform:translateY(3px)}}
+  @keyframes pbRowRing{0%,100%{box-shadow:0 0 0 0 rgba(185,28,28,.35)}50%{box-shadow:0 0 0 5px rgba(185,28,28,0)}}
+
+  /* ===== Table ===== */
+  #view201 .card{max-width:none}
+  .tbl{overflow:auto;max-height:70vh;border:1px solid var(--line);border-radius:18px;background:#fff;box-shadow:0 12px 32px rgba(185,28,28,.07)}
+  table{width:100%;border-collapse:separate;border-spacing:0;font-size:.9rem}
+  thead th{position:sticky;top:0;z-index:2;text-align:left;padding:14px;background:#fff7f7;color:#991b1b;font-size:.7rem;font-weight:800;letter-spacing:.09em;text-transform:uppercase;border-bottom:1px solid var(--line);white-space:nowrap}
+  td{padding:14px;border-bottom:1px solid #f8e6e7;vertical-align:middle;background:#fff;transition:background .2s,box-shadow .2s}
+  tbody tr:last-child td{border-bottom:0}
+  tbody tr:hover td{background:#fffafa}
+  tbody tr td:first-child{box-shadow:inset 3px 0 0 transparent}
+  tbody tr:hover td:first-child{box-shadow:inset 3px 0 0 #b91c1c}
+  tbody tr.sel-on td{background:#fff1f1}
+  tbody tr.ani{animation:rowIn .45s cubic-bezier(.2,.8,.2,1) backwards;animation-delay:calc(var(--i) * 40ms)}
+  @keyframes rowIn{from{opacity:0;transform:translateY(12px)}}
+  td.rem{min-width:230px;max-width:290px}
+  td.chk{min-width:160px}
+  td.addr{min-width:220px;max-width:300px}
+  .person{display:flex;align-items:center;gap:12px;min-width:220px}
+  .person .pn{font-weight:700;line-height:1.25}
+  .person .sub{word-break:break-all}
+  /* clickable name = downloads only the 201 form PDF */
+  button.namelink{display:inline-block;padding:0;border:0;background:none;font:inherit;font-weight:700;line-height:1.25;text-align:left;color:var(--ink);cursor:pointer;transition:color .2s}
+  button.namelink:hover:not(:disabled){color:var(--accent);text-decoration:underline}
+  button.namelink:disabled{cursor:not-allowed;opacity:.7}
+  button.namelink.busy{color:var(--accent);cursor:wait;opacity:1;animation:pbPulse 1s ease-in-out infinite}
+  .av{flex:none;width:40px;height:40px;border-radius:50%;display:grid;place-items:center;font-size:.8rem;font-weight:800;letter-spacing:.02em;background:hsl(var(--h) 80% 92%);color:hsl(var(--h) 65% 35%);transition:transform .3s cubic-bezier(.3,1.5,.5,1)}
+  tbody tr:hover .av{transform:scale(1.1) rotate(-4deg)}
+  .av.sm{width:28px;height:28px;font-size:.65rem}
+  .chkby{display:flex;align-items:center;gap:10px}
+  .chkby .by{font-weight:700}
+  .prog{display:flex;align-items:center;gap:8px;margin-bottom:6px}
+  .prog b{flex:none;font-size:.72rem;color:var(--muted)}
+  .prog span{flex:1;height:6px;border-radius:6px;background:#f6e3e4;overflow:hidden}
+  .prog i{display:block;height:100%;border-radius:6px;background:linear-gradient(90deg,#f59e0b,#ef4444);animation:grow .8s cubic-bezier(.2,.8,.2,1) backwards}
+  .prog i.full{background:linear-gradient(90deg,#22c55e,#15803d)}
+  @keyframes grow{from{width:0!important}}
+  .acts{display:flex;align-items:center;gap:8px}
+  .empty{padding:48px 20px;text-align:center;color:var(--muted)}
+  .empty .eico{display:inline-grid;place-items:center;width:64px;height:64px;margin-bottom:10px;border-radius:50%;background:#fee2e2;color:var(--accent);animation:floaty 2.4s ease-in-out infinite}
+  .empty strong{display:block;color:var(--ink);margin-bottom:2px}
+  @keyframes floaty{50%{transform:translateY(-6px)}}
+  .skel td{padding:10px 14px}
+  .sk{height:42px;border-radius:10px;background:linear-gradient(90deg,#fbeeee 25%,#fff6f6 50%,#fbeeee 75%);background-size:200% 100%;animation:sk 1.2s linear infinite}
+  @keyframes sk{to{background-position:-200% 0}}
+  td.sel,th.sel{width:36px;padding-right:0}
+  input.pick{width:18px;height:18px;accent-color:#b91c1c;cursor:pointer}
+
+  /* Pager */
+  .pager{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-top:12px;font-size:.85rem;color:var(--muted)}
+  .pager:empty{display:none}
+  .pager div{display:flex;align-items:center;gap:10px}
+  .pager button{padding:7px 14px;border:1px solid var(--line);border-radius:10px;background:#fff;color:var(--accent);font-weight:700;cursor:pointer;transition:transform .2s,background .2s}
+  .pager button:hover:not(:disabled){background:#fdeaea;transform:translateY(-2px)}
+  .pager button:disabled{opacity:.45;cursor:not-allowed}
+  .pager .pg{font-weight:700;color:var(--ink)}
+
+  /* Per-row icon buttons */
+  button.rowpdf,button.rowmail{position:relative;overflow:hidden;flex:none;display:inline-grid;place-items:center;width:34px;height:34px;padding:0;border:1px solid #f0b4b8;border-radius:10px;background:#fff;color:#b91c1c;cursor:pointer;transition:transform .2s,background .2s,box-shadow .2s}
+  button.rowpdf:hover:not(:disabled),button.rowmail:hover:not(:disabled){background:#fdeaea;border-color:#b91c1c;transform:translateY(-2px);box-shadow:0 6px 12px rgba(185,28,28,.15)}
+  button.rowpdf:disabled{opacity:.4;cursor:not-allowed}
+  button.rowpdf.is-loading:disabled{opacity:1;cursor:wait}
+  button.rowmail:disabled{opacity:.4;cursor:not-allowed}
+  button.rowpdf.is-loading{opacity:1;background:#fdeaea;border-color:#b91c1c;animation:pbRowRing 1s ease-out infinite}
+  button.rowpdf.is-loading svg{animation:pbRowBounce .7s ease-in-out infinite}
+
+  .warnbox{display:flex;gap:10px;align-items:flex-start;margin:0 0 14px;padding:10px 14px;border:1px solid #fcd34d;border-radius:10px;background:#fef3c7;color:#92400e;font-size:.85rem;font-weight:600}
+
+  /* Status pills */
+  .pill{display:inline-flex;align-items:center;gap:6px;padding:4px 12px;border-radius:999px;font-size:.72rem;font-weight:800;letter-spacing:.06em;text-transform:uppercase;white-space:nowrap}
+  .pill::before{content:"";width:7px;height:7px;border-radius:50%;background:currentColor}
+  .pill.pending{background:#fef3c7;color:#92400e;border:1px solid #fcd34d}
+  .pill.pending::before{animation:pulseDot 1.6s infinite}
+  .pill.complete{background:#dbeafe;color:#1e40af;border:1px solid #93c5fd}
+  .pill.approved{background:#dcfce7;color:#166534;border:1px solid #86efac}
+  @keyframes pulseDot{50%{opacity:.35}}
+
+  /* Buttons */
+  .viewbtn{position:relative;overflow:hidden;display:inline-flex;align-items:center;gap:6px;padding:7px 14px;font-size:.85rem;font-weight:700;white-space:nowrap;cursor:pointer;transition:transform .2s,box-shadow .2s}
+  .viewbtn:hover:not(:disabled){transform:translateY(-2px);box-shadow:0 6px 12px rgba(185,28,28,.15)}
+  .viewbtn:disabled{opacity:.5;cursor:not-allowed}
+  button.approve{position:relative;overflow:hidden;padding:8px 16px;border:0;border-radius:10px;font-size:.85rem;font-weight:700;white-space:nowrap;cursor:pointer;background:linear-gradient(120deg,#ef4444,#b91c1c);color:#fff;box-shadow:0 4px 12px rgba(185,28,28,.25);transition:transform .2s,box-shadow .2s,filter .2s}
+  button.approve:hover:not(:disabled){transform:translateY(-2px);box-shadow:0 8px 18px rgba(185,28,28,.3)}
+  button.approve:active:not(:disabled){transform:scale(.96)}
+  button.approve::after{content:"";position:absolute;top:0;left:-70%;width:50%;height:100%;background:linear-gradient(100deg,transparent,rgba(255,255,255,.45),transparent);transform:skewX(-20deg);transition:left .6s}
+  button.approve:hover:not(:disabled)::after{left:130%}
+  button.approve:disabled{background:#e9dcdd;color:#9a8588;box-shadow:none;cursor:not-allowed}
+  button.approve.loading,button.approve.loading:disabled{background:linear-gradient(120deg,#ef4444,#b91c1c);color:transparent;pointer-events:none}
+  button.approve.loading::before{content:"";position:absolute;left:50%;top:50%;width:18px;height:18px;margin:-9px 0 0 -9px;border:3px solid rgba(255,255,255,.4);border-top-color:#fff;border-radius:50%;animation:pbSpin .7s linear infinite}
+  button.mailsel{position:relative;overflow:hidden;display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border:1px solid #f0b4b8;border-radius:10px;font-size:.85rem;font-weight:700;white-space:nowrap;cursor:pointer;background:#fff;color:#b91c1c;transition:transform .2s,background .2s}
+  button.mailsel:hover:not(:disabled){background:#fdeaea;border-color:#b91c1c;transform:translateY(-2px)}
+  button.mailsel:disabled{opacity:.45;cursor:not-allowed}
+  button.mailsel.bump{animation:pop .3s cubic-bezier(.3,1.5,.5,1)}
+  .ripple{position:absolute;border-radius:50%;background:currentColor;opacity:.25;transform:scale(0);animation:rip .6s ease-out forwards;pointer-events:none}
+  @keyframes rip{to{transform:scale(1);opacity:0}}
+
+  /* File viewer pop-up */
+  dialog{width:calc(100% - 32px);max-width:680px;max-height:90vh;padding:24px;border:1px solid var(--line);border-radius:12px;background:var(--surface);color:var(--ink)}
+  dialog.wide{max-width:900px}
+  dialog::backdrop{background:rgba(40,10,12,.55)}
+  .dh{display:flex;justify-content:space-between;align-items:start;gap:12px;margin-bottom:12px}
+  .dh h2{margin:0}
+  .vf{margin:0 0 20px;padding-bottom:20px;border-bottom:1px solid var(--line)}
+  .vf figcaption{display:flex;flex-direction:column;gap:2px;margin-bottom:8px}
+  .vf img{max-width:100%;border-radius:8px;border:1px solid var(--line)}
+  .vf iframe{width:100%;height:480px;border:1px solid var(--line);border-radius:8px;background:#fff}
+  .vf a{color:var(--accent);font-weight:600;font-size:.85rem}
+
+  /* Approve + Email dialogs */
+  dialog.ap,dialog.em{max-width:460px;padding:0;overflow:hidden;border:0;border-radius:18px;box-shadow:0 24px 60px rgba(127,29,29,.35)}
+  dialog.em{max-width:560px;max-height:90vh;overflow-y:auto;overflow-x:hidden;scrollbar-width:thin;scrollbar-color:#b91c1c #fdeaea}
+  dialog.em::-webkit-scrollbar{width:8px}
+  dialog.em::-webkit-scrollbar-track{background:#fdeaea}
+  dialog.em::-webkit-scrollbar-thumb{background:#b91c1c;border-radius:8px}
+  dialog.em .ap-head{position:sticky;top:0;z-index:2}
+
+  /* pop-up open / close animation */
+  dialog[open]{animation:apIn .22s cubic-bezier(.2,.9,.3,1.15)}
+  dialog[open]::backdrop{animation:fadeIn .25s both;backdrop-filter:blur(3px)}
+  dialog.closing[open]{animation:apOut .2s ease forwards}
+  dialog.closing[open]::backdrop{animation:fadeOut .2s forwards}
+  @keyframes apIn{from{opacity:0;transform:translateY(16px) scale(.95)}to{opacity:1;transform:none}}
+  @keyframes apOut{to{opacity:0;transform:translateY(12px) scale(.97)}}
+  @keyframes fadeIn{from{opacity:0}}
+  @keyframes fadeOut{to{opacity:0}}
+
+  .ap-head{display:flex;align-items:center;gap:14px;padding:20px 24px;color:#fff;background:linear-gradient(120deg,#7f1d1d 0%,#b91c1c 55%,#ef4444 100%)}
+  .ap-ico{flex:none;width:42px;height:42px;border-radius:12px;background:rgba(255,255,255,.2);display:grid;place-items:center;font-size:1.2rem}
+  .ap-head h2{margin:0;font-size:1.1rem}
+  .ap-head p{margin:2px 0 0;font-size:.82rem;opacity:.9}
+  .ap-body{padding:22px 24px 8px}
+  .ap-sum{display:grid;grid-template-columns:auto 1fr;gap:8px 16px;margin:0 0 18px;padding:14px 16px;border:1px solid var(--line);border-radius:12px;background:#fff7f7;font-size:.9rem}
+  .ap-sum dt{color:var(--muted);font-weight:600}
+  .ap-sum dd{margin:0;font-weight:700;word-break:break-word}
+  .ap-lbl{display:block;margin-bottom:6px;font-size:.85rem;font-weight:700;color:#991b1b}
+  .ap-lbl span{color:var(--muted);font-weight:400}
+  #apNote{width:100%;min-height:84px;padding:10px 12px;border:1px solid var(--line);border-radius:10px;font:inherit;color:var(--ink);resize:vertical;box-sizing:border-box}
+  #apNote:focus{outline:2px solid var(--accent);outline-offset:1px;border-color:var(--accent)}
+  .ap-err{min-height:1.2em;margin:8px 0 0;font-size:.85rem;color:var(--err)}
+  .ap-foot{display:flex;justify-content:flex-end;gap:10px;padding:14px 24px 22px}
+  .ap-foot .ghost{padding:9px 18px;border:1px solid var(--line);border-radius:10px;background:#fff;color:var(--ink);font-weight:700;cursor:pointer;transition:transform .2s}
+  .ap-foot .ghost:hover{border-color:var(--accent);color:var(--accent);transform:translateY(-2px)}
+
+  /* Email form */
+  dialog.em form{padding:6px 24px 0}
+  dialog.em label{display:block;margin:14px 0 6px;font-size:.78rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#991b1b}
+  dialog.em input,dialog.em textarea{width:100%;box-sizing:border-box;padding:10px 12px;border:1px solid var(--line);border-radius:10px;font:inherit;color:var(--ink);background:#fff}
+  dialog.em input:read-only{background:#f7eeee;color:#7a5b5f}
+  dialog.em textarea{min-height:170px;resize:vertical}
+  dialog.em input:focus,dialog.em textarea:focus{outline:2px solid var(--accent);outline-offset:1px;border-color:var(--accent)}
+  dialog.em .ap-foot{padding:10px 0 22px}
+  dialog.em input[type=file]{padding:8px;background:#fff7f7}
+  .flist{list-style:none;margin:8px 0 0;padding:0;display:grid;gap:6px}
+  .flist li{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:6px 10px;border:1px solid var(--line);border-radius:10px;background:#fff;font-size:.85rem;word-break:break-all;animation:pop .3s cubic-bezier(.3,1.5,.5,1)}
+  .flist button{flex:none;padding:2px 8px;border:1px solid var(--line);border-radius:8px;background:#fff;color:var(--err);font-weight:700;cursor:pointer}
+  .flist button:hover{background:#fdeaea}
+  .warnx{color:var(--warn);font-weight:600}
+  .rcpt{max-height:160px;overflow:auto;margin:0;padding:8px 12px;border:1px solid var(--line);border-radius:10px;background:#f7eeee;list-style:none;font-size:.85rem}
+  .rcpt li{padding:6px 0;border-bottom:1px dashed var(--line)}
+  .rcpt li:last-child{border:0}
+  .rcpt .sub{display:block}
+  .hintx{margin:6px 0 0;font-size:.78rem;color:var(--muted)}
+
+  /* Sending dialog */
+  dialog.sd{max-width:440px;padding:28px 26px 22px;border:0;border-radius:20px;text-align:center;box-shadow:0 24px 60px rgba(127,29,29,.4)}
+  dialog.sd::backdrop{background:rgba(40,10,12,.65);backdrop-filter:blur(2px)}
+  .sd-stage{position:relative;height:110px;display:grid;place-items:center;overflow:hidden;margin-bottom:6px}
+  .sd-env{width:84px;height:84px;color:#b91c1c;animation:sdFloat 1.6s ease-in-out infinite}
+  .sd-plane{position:absolute;left:-40px;top:22px;width:30px;height:30px;color:#ef4444;opacity:0;animation:sdFly 1.6s ease-in-out infinite}
+  .sd-plane.p2{top:62px;width:22px;height:22px;animation-delay:.8s}
+  .sd-ok,.sd-ko{position:relative;display:none;width:84px;height:84px;border-radius:50%;place-items:center;color:#fff}
+  .sd-ok{background:linear-gradient(120deg,#22c55e,#15803d);box-shadow:0 8px 24px rgba(21,128,61,.4)}
+  .sd-ko{background:linear-gradient(120deg,#ef4444,#b42318);box-shadow:0 8px 24px rgba(180,35,24,.4)}
+  .sd-ok svg,.sd-ko svg{width:44px;height:44px}
+  .sd.is-done .sd-ok,.sd.is-fail .sd-ko{display:grid;animation:pbPop .5s cubic-bezier(.34,1.56,.64,1)}
+  .sd.is-done .sd-env,.sd.is-fail .sd-env,.sd.is-done .sd-plane,.sd.is-fail .sd-plane{display:none}
+  .sd-ok path{stroke-dasharray:30;stroke-dashoffset:30;animation:pbDraw .45s .15s ease-out forwards}
+  .sd-ok::after{content:"";position:absolute;inset:0;border-radius:50%;border:3px solid #22c55e;animation:sdRing .9s ease-out forwards}
+  .sd h2{margin:6px 0 2px;font-size:1.15rem;color:#7f1d1d}
+  .sd-sub{margin:0 0 14px;min-height:1.2em;font-size:.85rem;color:var(--muted);word-break:break-all}
+  .sd-bar{height:8px;border-radius:8px;background:#fdeaea;overflow:hidden}
+  .sd-bar i{display:block;position:relative;overflow:hidden;height:100%;width:0;border-radius:8px;background:linear-gradient(90deg,#ef4444,#b91c1c);transition:width .45s cubic-bezier(.4,0,.2,1),background .4s}
+  .sd.is-sending .sd-bar i::after{content:"";position:absolute;inset:0;background:linear-gradient(105deg,transparent 30%,rgba(255,255,255,.5) 50%,transparent 70%);transform:translateX(-100%);animation:pbShine 1s ease-in-out infinite}
+  .sd.is-done .sd-bar i{background:linear-gradient(90deg,#22c55e,#15803d)}
+  .sd.is-fail .sd-bar i{background:linear-gradient(90deg,#f59e0b,#b42318)}
+  .sd-list{list-style:none;margin:16px 0 0;padding:0;display:grid;gap:8px;max-height:200px;overflow:auto;text-align:left}
+  .sd-list li{display:flex;gap:12px;align-items:flex-start;padding:8px 12px;border:1px solid var(--line);border-radius:12px;background:#fff;font-size:.85rem;transition:background .3s,border-color .3s}
+  .sd-list li.run{border-color:#b91c1c;background:#fff7f7}
+  .sd-list li.ok{border-color:#86efac;background:#f0fdf4}
+  .sd-list li.err{border-color:#fca5a5;background:#fef2f2}
+  .sd-ic{flex:none;width:22px;height:22px;margin-top:1px;border-radius:50%;display:grid;place-items:center;font-size:.75rem;font-weight:800;color:#fff;background:#e9dcdd}
+  .sd-list li.run .sd-ic{background:none}
+  .sd-list li.ok .sd-ic{background:#16a34a;animation:pbPop .35s cubic-bezier(.34,1.56,.64,1)}
+  .sd-list li.err .sd-ic{background:#b42318}
+  .sd-t{display:flex;flex-direction:column;min-width:0;word-break:break-all}
+  .sd-e{margin-top:2px;color:var(--err);font-size:.78rem}
+  .sd-spin{width:18px;height:18px;border-radius:50%;border:3px solid #f0b4b8;border-top-color:#b91c1c;animation:pbSpin .7s linear infinite}
+  .sd-foot{display:flex;justify-content:flex-end;gap:10px;margin-top:16px}
+  .sd-foot[hidden]{display:none}
+  .sd-foot .ghost{padding:9px 18px;border:1px solid var(--line);border-radius:10px;background:#fff;color:var(--ink);font-weight:700;cursor:pointer}
+  .sd-foot .ghost:hover{border-color:var(--accent);color:var(--accent)}
+  @keyframes sdFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-7px)}}
+  @keyframes sdFly{0%{transform:translate(0,12px) rotate(8deg);opacity:0}15%{opacity:1}85%{opacity:1}100%{transform:translate(460px,-22px) rotate(8deg);opacity:0}}
+  @keyframes sdRing{from{transform:scale(1);opacity:.8}to{transform:scale(1.8);opacity:0}}
+
+  /* ===== Analytics dashboard ===== */
+  .an{display:grid;grid-template-columns:repeat(12,1fr);gap:14px;margin-bottom:18px;font-variant-numeric:tabular-nums}
+  .ac{grid-column:span 4;min-width:0;padding:16px 18px;border:1px solid var(--line);border-radius:16px;background:#fff;box-shadow:0 8px 24px rgba(185,28,28,.05);animation:cardIn .55s cubic-bezier(.2,.8,.2,1) backwards;animation-delay:calc(var(--i) * 60ms)}
+  .ac.k{grid-column:span 3}.ac.w7{grid-column:span 7}.ac.w5{grid-column:span 5}
+  .at{margin:0 0 12px;font-size:.7rem;font-weight:800;letter-spacing:.09em;text-transform:uppercase;color:#991b1b}
+  .kv{font-size:2rem;font-weight:800;line-height:1;color:var(--ink)}
+  .kv small{margin-left:3px;font-size:.95rem;font-weight:700;color:var(--muted)}
+  .kb{height:6px;margin:12px 0 8px;border-radius:6px;background:#f6e3e4;overflow:hidden}
+  .kb i{display:block;height:100%;border-radius:6px;animation:grow .8s cubic-bezier(.2,.8,.2,1) backwards}
+  .hb{display:grid;grid-template-columns:minmax(70px,120px) 1fr 28px;align-items:center;gap:10px;margin-bottom:9px;font-size:.82rem}
+  .hl{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:600}
+  .ht{height:8px;border-radius:8px;background:#f6e3e4;overflow:hidden}
+  .ht i{display:block;height:100%;border-radius:8px;animation:grow .8s cubic-bezier(.2,.8,.2,1) backwards}
+  .hb b{text-align:right}
+  .dn{display:flex;align-items:center;gap:24px;flex-wrap:wrap}
+  .dn svg{width:140px;height:140px;flex:none}
+  .lg{display:grid;gap:9px;font-size:.85rem;font-weight:600}
+  .lg span{display:flex;align-items:center;gap:8px}
+  .lg i{width:10px;height:10px;border-radius:3px}
+  .lg b{margin-left:auto;padding-left:14px}
+  .an text{font-family:inherit}
+  @media(max-width:1000px){.ac,.ac.k,.ac.w7,.ac.w5{grid-column:span 6}}
+  @media(max-width:640px){.ac,.ac.k,.ac.w7,.ac.w5{grid-column:span 12}}
+
+  @media (prefers-reduced-motion:reduce){
+    .app,tbody tr.ani,.badge,.view-in,.app .live,.prog i,.empty .eico,.pdfbtn,.pdfbtn *,.pdfbtn::before,.pdfbtn::after,button.rowpdf,button.rowpdf *,dialog,dialog::backdrop,dialog.sd *,.sd-ok::after{animation-duration:.01s!important}
+    .app,.app *,tbody tr,td{transition:none!important}
+  }
+  @media(max-width:900px){.apps{grid-template-columns:repeat(2,1fr)}}
+  @media(max-width:640px){.filters .count{margin-left:0}}
+  @media(max-width:520px){.apps{grid-template-columns:1fr}}
 </style>
 </head>
-<body>
-<aside id="side"><div class="brand"><i>G</i>GM Dashboard</div><nav id="nav" style="flex:1"></nav>
-  <div style="padding:14px 8px 4px;border-top:1px solid var(--ln)"><div id="userName" style="font-weight:700;word-break:break-all"></div><span id="welcomeName" hidden></span>
-    <a href="/manager/" class="nv" style="margin-top:6px">← Back to manager</a><button class="btn" id="logoutBtn" style="margin-top:6px;width:100%">Log out</button></div></aside>
+<body data-role="manager">
 <main>
-  <div class="top">
-    <div><button class="btn" id="burger" aria-label="Menu">☰</button>
-      <h1 id="ttl">Overview</h1><small id="sub"></small></div>
-    <div class="tools">
-      <select id="fCo" aria-label="Company"><option value="all">All companies</option><option>Prestige</option><option>Regcris</option><option>Tmarks</option><option>CoMerch</option></select>
-      <select id="fYr" aria-label="Year"></select><select id="fMo" aria-label="Month"><option value="">All months</option></select>
-      <label class="chk"><input type="checkbox" id="fCmp" checked> Compare</label>
-      <button class="btn" id="bCsv">Export CSV</button><button class="btn" id="bPrt">Print</button><button class="btn pri" id="bRef">Refresh</button>
+  <div class="banner">
+    <div class="brandbox">
+      <div class="logo">HR</div>
+      <div>
+        <h1>HR CONNECT ACCESS CONTROL</h1>
+        <div class="tagline">Human Resources Digital Management System</div>
+        <div class="tag">HR &amp; ADMINISTRATION</div>
+      </div>
+    </div>
+    <div class="who">
+      <span>Welcome, <strong id="welcomeName"></strong></span>
+      <span id="userName" hidden></span>
+      <button id="logoutBtn" type="button">Log out</button>
     </div>
   </div>
-  <div id="view"><div class="sk"></div><div class="sk" style="min-height:300px"></div></div>
+
+  <!-- Home: applications -->
+  <div id="home">
+    <h2 class="sec">RECRUITMENT APPLICATIONS</h2>
+    <p class="secsub">Human Resources Applications &amp; Digital Services</p>
+    <div class="apps" id="apps"></div>
+  </div>
+
+  <!-- 201 Request -->
+  <div id="view201" hidden>
+    <button class="back" id="backBtn" type="button">← Back to applications</button>
+    <section class="card">
+      <div class="box-head">
+        <h2>201 Submission</h2>
+        <div class="tools">
+          <button type="button" id="refreshBtn"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a9 9 0 1 1-3-6.7L21 8M21 3v5h-5"/></svg>Refresh</button>
+          <button type="button" id="mailSelBtn" class="mailsel" disabled>✉ Email selected (0)</button>
+          <button type="button" id="pdfBtn" class="pdfbtn" disabled>
+            <span class="pb-ico" aria-hidden="true">
+              <svg class="pb-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12M7 10l5 5 5-5M5 21h14"/></svg>
+              <svg class="pb-ring" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><circle cx="12" cy="12" r="9" opacity=".25"/><path d="M21 12a9 9 0 0 0-9-9"/></svg>
+              <svg class="pb-tick" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 13l4 4L19 7"/></svg>
+            </span>
+            <span class="pb-txt" id="pdfTxt">Download PDF</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="an" id="an"></div>
+
+      <div class="filters">
+        <label class="search">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+          <input id="q" type="search" placeholder="Search name, email, company, coordinator, region..." autocomplete="off" aria-label="Search submissions">
+        </label>
+        <select id="sortSel" aria-label="Sort submissions">
+          <option value="new">Newest first</option>
+          <option value="old">Oldest first</option>
+          <option value="az">Name A to Z</option>
+          <option value="za">Name Z to A</option>
+        </select>
+        <span class="count" id="count"></span>
+      </div>
+
+      <div class="tbl">
+        <table>
+          <thead>
+            <tr><th class="sel"><input type="checkbox" class="pick" id="pickAll" aria-label="Select all"></th><th>Employee</th><th>Contact</th><th>Recruiter / Coordinator</th><th>Remarks</th><th>Status</th><th>Document</th><th>Checked By</th><th>Action</th></tr>
+          </thead>
+          <tbody id="rows"></tbody>
+        </table>
+      </div>
+      <div class="pager" id="pager"></div>
+      <div class="st" id="listMsg" role="status" aria-live="polite"></div>
+    </section>
+  </div>
 </main>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<!-- File viewer pop-up -->
+<dialog id="vw" class="wide" aria-labelledby="vwTitle">
+  <div class="dh"><h2 id="vwTitle">Documents</h2><button type="button" id="vwClose">Close</button></div>
+  <div id="vwBody"></div>
+</dialog>
+
+<!-- Approve pop-up -->
+<dialog id="ap" class="ap" aria-labelledby="apTitle">
+  <form id="apForm" method="dialog">
+    <div class="ap-head">
+      <div class="ap-ico"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg></div>
+      <div>
+        <h2 id="apTitle">Approve 201 Submission</h2>
+        <p>This marks the submission as approved.</p>
+      </div>
+    </div>
+    <div class="ap-body">
+      <dl class="ap-sum">
+        <dt>Name</dt><dd id="apName"></dd>
+        <dt>Email</dt><dd id="apEmail"></dd>
+        <dt>Documents</dt><dd id="apDocs"></dd>
+      </dl>
+      <label class="ap-lbl" for="apNote">Approval note <span>(optional)</span></label>
+      <textarea id="apNote" name="approvalNote" maxlength="300" placeholder="Add a note for the record"></textarea>
+      <p class="ap-err" id="apErr" role="alert"></p>
+    </div>
+    <div class="ap-foot">
+      <button type="button" class="ghost" id="apCancel">Cancel</button>
+      <button type="submit" class="approve" id="apSubmit">Approve</button>
+    </div>
+  </form>
+</dialog>
+
+<!-- Email to coordinator / recruiter (scrollable) -->
+<dialog id="em" class="em" aria-labelledby="emTitle">
+  <div class="ap-head">
+    <div class="ap-ico" aria-hidden="true">✉</div>
+    <div>
+      <h2 id="emTitle">Email Coordinator / Recruiter</h2>
+      <p id="emFor"></p>
+    </div>
+  </div>
+  <form id="emForm">
+    <label>To (Coordinator / Recruiter)</label>
+    <ul class="rcpt" id="emTo"></ul>
+    <label for="emSubject">Subject</label>
+    <input id="emSubject" maxlength="150" required>
+    <label for="emMsg">Message</label>
+    <textarea id="emMsg" maxlength="3000" required></textarea>
+    <p class="hintx">Tip: <b>{coordinator}</b> = pangalan ng coordinator, <b>{employees}</b> = listahan ng employees nila (may Kulang / Complete).</p>
+    <label for="emFiles">Attach contract (PDF) <span style="font-weight:400;text-transform:none;letter-spacing:0">(optional)</span></label>
+    <input id="emFiles" type="file" accept=".pdf,application/pdf">
+    <ul class="flist" id="emFileList"></ul>
+    <p class="hintx">PDF lang, hanggang 10 MB. Isang contract kada send.</p>
+    <p class="hintx warnx" id="emFileWarn" hidden>⚠ Ang contract ay ipapadala sa LAHAT ng coordinator na nasa listahan. Siguraduhing tama ito para sa kanila.</p>
+    <p class="ap-err" id="emFileErr" role="alert"></p>
+    <p class="ap-err" id="emErr" role="alert"></p>
+    <div class="ap-foot">
+      <button type="button" class="ghost" id="emCancel">Cancel</button>
+      <button type="submit" class="approve" id="emSend">Send email</button>
+    </div>
+  </form>
+</dialog>
+
+<!-- Sending progress -->
+<dialog id="sd" class="sd" aria-labelledby="sdTitle" aria-live="polite">
+  <div class="sd-stage" aria-hidden="true">
+    <svg class="sd-env" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg>
+    <svg class="sd-plane" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2 11 13M22 2l-7 20-4-9-9-4 20-7z"/></svg>
+    <svg class="sd-plane p2" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2 11 13M22 2l-7 20-4-9-9-4 20-7z"/></svg>
+    <div class="sd-ok"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 13l4 4L19 7"/></svg></div>
+    <div class="sd-ko"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M12 7v6M12 17h.01"/></svg></div>
+  </div>
+  <h2 id="sdTitle">Sending email...</h2>
+  <p class="sd-sub" id="sdSub"></p>
+  <div class="sd-bar"><i id="sdFill"></i></div>
+  <ul class="sd-list" id="sdList"></ul>
+  <div class="sd-foot" id="sdFoot" hidden>
+    <button type="button" class="ghost" id="sdClose">Back</button>
+    <button type="button" class="approve" id="sdRetry">Retry failed</button>
+  </div>
+</dialog>
+
 <script type="module">
 import { guard, auth } from "../shared/guard.js";
 import { API_URL } from "../shared/firebase-config.js";
-// ---------- CONFIG ----------
-const API_BASE = API_URL.replace(/\/+$/, '');
-const DEMO = new URLSearchParams(location.search).has('demo');   // /gm/?demo previews the design with sample data
-const getToken = () => auth.currentUser.getIdToken();            // Firebase ID token for requireAuth
 
-// ---------- NAV / VIEWS ----------
-const V = {
-  overview:{t:'Overview'},
-  payroll:{t:'Per payroll period',k:'perPayroll',trend:1,l:'Payroll period'}, month:{t:'Per month',k:'perMonth',trend:1,l:'Month'}, year:{t:'Per year',k:'perYear',trend:1,l:'Year'},
-  company:{t:'Per company',k:'perCompany',l:'Company',ty:'doughnut'}, client:{t:'Client / principal',k:'perClient',l:'Client'},
-  region:{t:'Region',k:'perRegion',l:'Region'}, province:{t:'Province',k:'perProvince',l:'Province'}, city:{t:'City / municipality',k:'perCity',l:'City / municipality'},
-  position:{t:'Position',k:'perPosition',l:'Position'}, gender:{t:'Gender',k:'perGender',l:'Gender',ty:'doughnut'}, age:{t:'Age range',k:'perAge',l:'Age range',ty:'bar',vert:1},
-  compliance:{t:'Submission compliance'}
+const RESUME = "Resume";
+// Must match the required documents in the staff "Add 201" form
+const REQS = ["2x2 ID Photo", "E-Signature", "PSA Birth Certificate", "SSS", "PhilHealth", "Pag-IBIG", "TIN"];
+const ORDER = [RESUME, ...REQS];
+const PER = 10;   // rows per page
+const ic = (d, s = 20) => `<svg viewBox="0 0 24 24" width="${s}" height="${s}" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${d}</svg>`;
+const EYE = ic(`<path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/>`, 16);
+const DOC = ic(`<path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M9 13h6M9 17h6"/>`);
+const DL = ic(`<path d="M12 3v12M7 10l5 5 5-5M5 21h14"/>`, 18);
+const MAIL = ic(`<rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/>`, 18);
+const I_INBOX = ic(`<path d="M22 12h-6l-2 3h-4l-2-3H2"/><path d="M5.5 5h13L22 12v6a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-6z"/>`, 30);
+
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const fmt = (d) => d ? new Date(d).toLocaleString("en-US", { year: "numeric", month: "2-digit", day: "2-digit", hour: "numeric", minute: "2-digit" }) : "—";
+const isPdf = (f) => /\.pdf(\?|$)/i.test(f.url);
+
+/* ---------- Toast, status message ---------- */
+let toastTimer;
+const toast = (msg) => {
+  const t = $("toast");
+  t.textContent = msg; t.classList.add("show");
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove("show"), 2400);
 };
-const NAV = [['overview'],['Total submission',['payroll','month','year']],['Company & client',['company','client']],['Location',['region','province','city']],['People',['position','gender','age']],['compliance']];
-const MON = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-const PAL = ['#4f8cff','#38d4ff','#35d8a4','#ffb547','#ff6b81','#a98bff','#7be0ff','#ffd27a'];
-const $ = id => document.getElementById(id);
-const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-const S = { data:null, prev:null, q:'', sort:['count',-1], lim:15, ct:null, err:null, at:null };
-const charts = {};
+const say = (text, type = "") => { $("listMsg").textContent = text; $("listMsg").className = "st " + type; if (type === "ok" && text) toast(text); };
 
-Chart.defaults.color = '#8794c4'; Chart.defaults.borderColor = '#1f2d5c'; Chart.defaults.font.family = 'Manrope';
-Chart.register({ id:'ctr', afterDraw(c){ if(c.config.type!=='doughnut') return; const a=c.chartArea,x=c.ctx,t=c.config.data.datasets[0].data.reduce((p,q)=>p+q,0),mx=(a.left+a.right)/2,my=(a.top+a.bottom)/2;
-  x.save();x.textAlign='center';x.fillStyle='#eaf0ff';x.font='800 24px Manrope';x.fillText(t,mx,my+4);x.fillStyle='#8794c4';x.font='500 11px Manrope';x.fillText('total',mx,my+20);x.restore(); }});
-const draw = (id,cfg) => { charts[id]?.destroy(); const el=$(id); if(el) charts[id]=new Chart(el,cfg); };
-const fillG = ctx => { const c=ctx.chart; if(!c.chartArea) return 'transparent'; const g=c.ctx.createLinearGradient(0,c.chartArea.top,0,c.chartArea.bottom); g.addColorStop(0,'rgba(79,140,255,.38)'); g.addColorStop(1,'rgba(79,140,255,0)'); return g; };
+/* ---------- Animation helpers ---------- */
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+// wait for the browser to paint the loading state before heavy work (jsPDF / JSZip block the main thread)
+const nextPaint = () => new Promise((r) => requestAnimationFrame(() => setTimeout(r, 50)));
 
-// ---------- DATA ----------
-const now = new Date();
-for (let y=now.getFullYear(); y>=now.getFullYear()-4; y--) $('fYr').add(new Option(y,y));
-$('fYr').add(new Option('All years',''),0); $('fYr').value = now.getFullYear();
-MON.forEach((m,i)=>$('fMo').add(new Option(m,i+1)));
-const params = () => ({ company:$('fCo').value, year:$('fYr').value, month:$('fMo').value });
-function prevParams(){ const p=params(); if(!p.year) return null; let y=+p.year,m=+p.month; if(m){ m--; if(!m){m=12;y--;} return {...p,year:y,month:m}; } return {...p,year:y-1}; }
-
-async function fetchData(p){
-  if (DEMO) return mock(p);
-  const res = await fetch(`${API_BASE}/api/analytics/201?${new URLSearchParams(p)}`, { headers:{ Authorization:`Bearer ${await getToken()}` } });
-  if (!res.ok) throw new Error(res.status===403 ? 'Your account is not allowed to view analytics.' : `Server returned ${res.status}.`);
-  return res.json();
+// pop-up closes with a short exit animation
+function closeAnim(d) {
+  if (!d.open || d.classList.contains("closing")) return;
+  d.classList.add("closing");
+  setTimeout(() => { d.classList.remove("closing"); d.close(); }, 200);
 }
-async function load(){
-  S.err=null; $('view').innerHTML='<div class="sk"></div><div class="sk" style="min-height:300px"></div>';
+["vw", "ap", "em"].forEach((id) => $(id).addEventListener("cancel", (e) => { e.preventDefault(); closeAnim($(id)); }));
+
+// ripple on buttons
+document.addEventListener("pointerdown", (e) => {
+  const b = e.target.closest("button.approve,.ap-foot button,.viewbtn,.rowpdf,.rowmail,.pdfbtn,.mailsel,.pager button");
+  if (!b || b.disabled) return;
+  const r = b.getBoundingClientRect(), sz = Math.max(r.width, r.height) * 2, sp = document.createElement("span");
+  sp.className = "ripple";
+  sp.style.cssText = `width:${sz}px;height:${sz}px;left:${e.clientX - r.left - sz / 2}px;top:${e.clientY - r.top - sz / 2}px`;
+  b.appendChild(sp);
+  setTimeout(() => sp.remove(), 600);
+});
+
+/* ---------- Home: application cards ---------- */
+const APPS = [
+  { title: "201 Submission", open: true },
+  { title: "201 Data Update Request" },
+  { title: "COE Request" },
+  { title: "Employment Verification" },
+  { title: "AWOL Reporting" },
+  { title: "Resignation Reporting" },
+  { title: "Incident Report" },
+  { title: "Coming Soon" }
+];
+$("apps").innerHTML = APPS.map((a, i) => {
+  const go = a.open ? `<div class="go"><span class="live"></span>OPEN APPLICATION <i>→</i></div>` : `<div class="go">● COMING SOON</div>`;
+  return `<button type="button" class="app${a.open ? "" : " soon"}" data-i="${i}" style="--i:${i}"${a.open ? ' id="app201"' : ' aria-disabled="true"'}>
+    ${a.open ? `<span class="badge" id="badge201" hidden></span>` : ""}
+    <div class="top"><div class="ico">${DOC}</div><div><div class="n">APPLICATION ${String(i + 1).padStart(2, "0")}</div><strong>${esc(a.title)}</strong></div></div>${go}</button>`;
+}).join("");
+
+$("apps").addEventListener("pointermove", (e) => {
+  const c = e.target.closest(".app");
+  if (!c) return;
+  const r = c.getBoundingClientRect();
+  c.style.setProperty("--mx", (e.clientX - r.left) + "px");
+  c.style.setProperty("--my", (e.clientY - r.top) + "px");
+});
+const show = (id) => {
+  $("home").hidden = id !== "home";
+  $("view201").hidden = id !== "view201";
+  const el = $(id); el.classList.remove("view-in"); void el.offsetWidth; el.classList.add("view-in");
+  window.scrollTo({ top: 0, behavior: "smooth" });
+};
+$("apps").addEventListener("click", (e) => {
+  const b = e.target.closest("button.app");
+  if (!b) return;
+  const a = APPS[Number(b.dataset.i)];
+  if (a.open) { show("view201"); renderTable(true); return; }
+  b.classList.remove("shake"); void b.offsetWidth; b.classList.add("shake");
+  toast(`${a.title} is coming soon.`);
+});
+$("backBtn").addEventListener("click", () => show("home"));
+
+// "N to approve" badge on the card (complete but not yet approved)
+function updateBadge() {
+  const n = items.filter((r) => statusOf(r).k === "complete").length, el = $("badge201");
+  el.hidden = !n;
+  el.textContent = n + " to approve";
+}
+
+/* ---------- API ---------- */
+async function api(path, opts = {}) {
+  const token = await auth.currentUser.getIdToken();
+  let res;
   try {
-    const pp = $('fCmp').checked ? prevParams() : null;
-    [S.data,S.prev] = await Promise.all([fetchData(params()), pp ? fetchData(pp) : null]);
-    S.at = new Date();
-  } catch(e){ S.err = e.message; }
-  show();
+    res = await fetch(API_URL + path, { ...opts, headers: { Authorization: "Bearer " + token, ...(opts.headers || {}) } });
+  } catch {
+    throw new Error("Cannot reach the server. Is the back-end running? (npm start in BACK-END)");
+  }
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data.error || "Request failed (" + res.status + ")");
+  return data;
 }
 
-// ---------- RENDER ----------
-const delta=(c,p,bad)=>{ if(p==null||!isFinite(p)) return ''; if(p===0) return c===0?'':'<span class="dl nu">new</span>'; const d=(c-p)/p*100,up=d>=0; if(Math.abs(d)<.05) return '<span class="dl nu">no change</span>';
-  const good=bad?!up:up; return `<span class="dl ${good?'up':'dn'}">${up?'▲':'▼'} ${Math.abs(d).toFixed(1)}% vs prev</span>`; };
-const periodText=()=>{ const p=params(); return `${p.company==='all'?'All companies':p.company} · ${p.month?MON[p.month-1]+' ':''}${p.year||'All years'}`; };
-const ring=(pct)=>`<div class="ring"><svg width="170" height="170" viewBox="0 0 120 120"><circle cx="60" cy="60" r="50" fill="none" stroke="#1f2d5c" stroke-width="10"/><circle cx="60" cy="60" r="50" fill="none" stroke="url(#rg)" stroke-width="10" stroke-linecap="round" stroke-dasharray="${pct*3.1416}  314.16" transform="rotate(-90 60 60)"/><defs><linearGradient id="rg"><stop offset="0" stop-color="#35d8a4"/><stop offset="1" stop-color="#38d4ff"/></linearGradient></defs></svg><b>${pct}%</b><em>on time</em></div>`;
-const kpi=(l,v,d,col)=>`<div class="card"><h3>${l}</h3><div class="n" data-n="${v}" ${col?`style="color:${col}"`:''}>0</div>${d}</div>`;
-const mini=(rows,v)=>`<div class="mini">${rows.slice(0,5).map(r=>`<div><span>${esc(r.label)}</span><b>${r.count}</b></div>`).join('')||'<div><span style="color:var(--mu)">No data</span></div>'}</div><a href="#/${v}" style="color:var(--cy);font-weight:700;display:inline-block;margin-top:8px">View all</a>`;
-const lateTbl=(rows)=>`<table><thead><tr><th>Company</th><th>Client</th><th>Position</th><th>Started</th><th>Submitted</th><th class="r">Late by</th></tr></thead><tbody>${rows.map(r=>`<tr><td>${esc(r.company)}</td><td>${esc(r.client)}</td><td>${esc(r.position)}</td><td>${esc(r.start)}</td><td>${esc(r.submitted)}</td><td class="r" style="color:var(--rd);font-weight:700">${r.hoursLate}h</td></tr>`).join('')||'<tr><td colspan="6" style="color:var(--mu);text-align:center">No late submissions</td></tr>'}</tbody></table>`;
+/* ---------- Data helpers ---------- */
+let items = [];
+const filesOf = (r) => r.requirements || [];
+const fileOf = (r, n) => filesOf(r).find((f) => f.name === n);
+const missingOf = (r) => REQS.filter((n) => !fileOf(r, n));
 
-function trendCfg(rows,type){ return { type, data:{ labels:rows.map(r=>r.label), datasets:[{ data:rows.map(r=>r.count), borderColor:'#4f8cff', backgroundColor:type==='line'?fillG:'#4f8cff', fill:true, tension:.35, borderRadius:6, pointRadius:3, pointBackgroundColor:'#38d4ff' }] },
-  options:{ maintainAspectRatio:false, plugins:{legend:{display:false}}, scales:{ y:{beginAtZero:true,ticks:{precision:0}}, x:{grid:{display:false}} } } }; }
-function pieCfg(rows){ return { type:'doughnut', data:{ labels:rows.map(r=>r.label), datasets:[{ data:rows.map(r=>r.count), backgroundColor:PAL, borderWidth:0 }] }, options:{ maintainAspectRatio:false, cutout:'68%', plugins:{legend:{position:'bottom',labels:{boxWidth:10,usePointStyle:true}}} } }; }
-function barCfg(rows,vert){ const r=rows.slice(0,10); return { type:'bar', data:{ labels:r.map(x=>x.label), datasets:[{ data:r.map(x=>x.count), backgroundColor:'#4f8cff', borderRadius:6 }] }, options:{ indexAxis:vert?'x':'y', maintainAspectRatio:false, plugins:{legend:{display:false}}, scales:{ x:{grid:{display:!!vert?false:true},ticks:{precision:0}}, y:{grid:{display:false},ticks:{precision:0}} } } }; }
-const toggle=(opts,cur)=>`<div class="tab">${opts.map(o=>`<button data-ct="${o[0]}" class="${o[0]===cur?'on':''}">${o[1]}</button>`).join('')}</div>`;
+// Time the last required document was first submitted (replacing a file does not change it)
+const completedAt = (r) => {
+  const t = REQS.map((n) => new Date(fileOf(r, n).uploadedAt || r.createdAt).getTime());
+  return new Date(Math.max(...t)).toISOString();
+};
 
-function rowsOf(v){ let rows=[...S.data[V[v].k]]; const tot=rows.reduce((a,r)=>a+r.count,0)||1; rows=rows.map(r=>({...r,share:r.count/tot*100}));
-  if(S.q) rows=rows.filter(r=>r.label.toLowerCase().includes(S.q.toLowerCase())); const [k,d]=S.sort; return rows.sort((a,b)=>(k==='label'?a.label.localeCompare(b.label):a[k]-b[k])*d); }
+// Status follows the files by itself: Pending -> Complete -> Approved
+const statusOf = (r) => {
+  if (r.status === "approved") return { k: "approved", t: "Approved" };
+  return missingOf(r).length ? { k: "pending", t: "Pending" } : { k: "complete", t: "Complete" };
+};
 
-function viewHtml(v){
-  const D=S.data,P=S.prev,K=D.kpi,PK=P&&P.kpi;
-  if(v==='overview') return `
-   <div class="g hero"><div class="card"><h3>Compliance</h3>${ring(K.onTimeRate)}</div>
-    <div class="kp">${kpi('Total submissions',K.total,delta(K.total,PK?.total))}${kpi('On time',K.onTime,delta(K.onTime,PK?.onTime),'var(--gr)')}${kpi('Late',K.late,delta(K.late,PK?.late,1),'var(--rd)')}${kpi('Avg. hours to submit',K.avgLagHours,delta(K.avgLagHours,PK?.avgLagHours,1))}</div></div>
-   <div class="g c21"><div class="card"><h3>Submissions trend <span id="tg"></span></h3><div class="ch-box"><canvas id="c1"></canvas></div></div>
-    <div class="card"><h3>Per company</h3><div class="ch-box"><canvas id="c2"></canvas></div></div></div>
-   <div class="g c3"><div class="card"><h3>Top clients</h3>${mini(D.perClient,'client')}</div><div class="card"><h3>Top positions</h3>${mini(D.perPosition,'position')}</div><div class="card"><h3>Top regions</h3>${mini(D.perRegion,'region')}</div></div>
-   <div class="card"><h3>Longest overdue <a href="#/compliance" style="color:var(--cy)">Open compliance</a></h3>${lateTbl(D.lateList.slice(0,5))}</div>`;
-  if(v==='compliance'){ const p=params(),y=+p.year||now.getFullYear(),m=+p.month||(now.getMonth()+1),map=Object.fromEntries(D.calendar.map(c=>[c.date,c])),f=new Date(y,m-1,1).getDay(),dn=new Date(y,m,0).getDate();
-    let h=['Su','Mo','Tu','We','Th','Fr','Sa'].map(d=>`<div class="h">${d}</div>`).join('')+'<div></div>'.repeat(f);
-    for(let d=1;d<=dn;d++){ const c=map[`${y}-${String(m).padStart(2,'0')}-${String(d).padStart(2,'0')}`]; h+=`<div class="d" ${c&&c.late?'style="border-color:rgba(255,107,129,.5)"':''}><b>${d}</b>${c?`<div class="ok">${c.onTime} on time</div>${c.late?`<div class="lt">${c.late} late</div>`:''}`:''}</div>`; }
-    return `<div class="g hero"><div class="card"><h3>On-time rate</h3>${ring(K.onTimeRate)}</div><div class="kp" style="grid-template-columns:repeat(3,1fr)">${kpi('On time',K.onTime,delta(K.onTime,PK?.onTime),'var(--gr)')}${kpi('Late',K.late,delta(K.late,PK?.late,1),'var(--rd)')}${kpi('Avg. hours to submit',K.avgLagHours,delta(K.avgLagHours,PK?.avgLagHours,1))}</div></div>
-     <div class="card" style="margin-bottom:14px"><h3>Submission calendar · ${MON[m-1]} ${y} <span class="pill">Late = over ${K.lateHours}h after start</span></h3><div class="cal">${h}</div></div>
-     <div class="card"><h3>Longest overdue</h3>${lateTbl(D.lateList)}</div>`; }
-  const c=V[v], rows=rowsOf(v), ct=S.ct||(c.trend?'line':c.ty||'bar'), mx=Math.max(1,...rows.map(r=>r.count)), shown=rows.slice(0,S.lim);
-  const th=(k,l,r)=>`<th data-s="${k}" class="${r?'r':''}">${l}${S.sort[0]===k?(S.sort[1]<0?' ▼':' ▲'):''}</th>`;
-  return `<div class="card" style="margin-bottom:14px"><h3>${c.t} <span id="tg"></span></h3><div class="ch-box"><canvas id="c1"></canvas></div></div>
-   <div class="card"><h3>${rows.length} ${rows.length===1?'row':'rows'} <input type="search" id="q" placeholder="Search ${c.l.toLowerCase()}…" value="${esc(S.q)}" style="min-width:220px"></h3>
-   <table><thead><tr>${th('label',c.l)}${th('count','Submissions',1)}${th('share','Share')}</tr></thead><tbody>${shown.map(r=>`<tr><td>${esc(r.label)}</td><td class="r"><b>${r.count}</b></td><td><div style="display:flex;gap:8px;align-items:center"><div class="mt" style="flex:1"><i style="width:${r.count/mx*100}%"></i></div><span style="color:var(--mu);width:46px">${r.share.toFixed(1)}%</span></div></td></tr>`).join('')||'<tr><td colspan="3" style="text-align:center;color:var(--mu)">No matching data</td></tr>'}</tbody></table>
-   ${rows.length>S.lim?`<button class="btn" id="more" style="margin-top:12px">Show ${Math.min(15,rows.length-S.lim)} more</button>`:''}</div>`;
+const initials = (n) => String(n || "?").trim().split(/\s+/).slice(0, 2).map((w) => w[0]).join("").toUpperCase();
+const hue = (n) => [350, 8, 24, 332, 16, 342][[...String(n)].reduce((a, c) => a + c.charCodeAt(0), 0) % 6];
+const avatar = (n, sm = "") => `<span class="av ${sm}" style="--h:${hue(n)}" aria-hidden="true">${esc(initials(n))}</span>`;
+
+/* ---------- Search / filter / sort / pages ---------- */
+let q = "", fil = "all", sortBy = "new", page = 1;
+
+function view() {
+  const k = q.trim().toLowerCase();
+  const out = items.filter((r) => {
+    if (fil === "unchecked" ? !!r.checkedBy : fil !== "all" && statusOf(r).k !== fil) return false;
+    return !k || [
+      r.fullName, r.email, r.contactNumber, r.residence,
+      r.company, r.supervisorName, r.supervisorEmail, r.supervisorMobile,
+      r.workArea, r.region, r.province, r.cityMunicipality,
+      r.checkedBy
+    ].some((v) => String(v || "").toLowerCase().includes(k));
+  });
+  const t = (r) => new Date(r.createdAt || 0).getTime();
+  const by = {
+    new: (a, b) => t(b) - t(a),
+    old: (a, b) => t(a) - t(b),
+    az: (a, b) => String(a.fullName).localeCompare(String(b.fullName)),
+    za: (a, b) => String(b.fullName).localeCompare(String(a.fullName))
+  };
+  return out.sort(by[sortBy]);
 }
 
-function afterDraw(v){
-  document.querySelectorAll('[data-n]').forEach(el=>{ const t=+el.dataset.n,s=performance.now(),run=n=>{ const k=Math.min(1,(n-s)/700); el.textContent=Math.round(t*(1-Math.pow(1-k,3))).toLocaleString(); if(k<1) requestAnimationFrame(run); }; matchMedia('(prefers-reduced-motion:reduce)').matches?el.textContent=t.toLocaleString():requestAnimationFrame(run); });
-  const D=S.data;
-  if(v==='overview'){ const ct=S.ct||'line'; $('tg').innerHTML=toggle([['line','Line'],['bar','Bars']],ct); draw('c1',trendCfg(D.perMonth,ct)); draw('c2',pieCfg(D.perCompany)); }
-  else if(v!=='compliance'){ const c=V[v],rows=S.data[c.k],ct=S.ct||(c.trend?'line':c.ty||'bar');
-    $('tg').innerHTML=toggle(c.trend?[['line','Line'],['bar','Bars']]:[['bar','Bars'],['doughnut','Donut']],ct);
-    draw('c1',ct==='doughnut'?pieCfg(rows):c.trend?trendCfg(rows,ct):barCfg(rows,c.vert)); }
+$("q").addEventListener("input", (e) => { q = e.target.value; page = 1; renderTable(false); });
+$("sortSel").addEventListener("change", (e) => { sortBy = e.target.value; page = 1; renderTable(true); });
+$("pager").addEventListener("click", (e) => {
+  const b = e.target.closest("button[data-pg]");
+  if (!b) return;
+  page += Number(b.dataset.pg);
+  renderTable(true);
+  document.querySelector(".tbl").scrollTo({ top: 0, behavior: "smooth" });
+});
+
+const skeleton = () => {
+  $("rows").innerHTML = Array.from({ length: 5 }, () => `<tr class="skel"><td colspan="9"><div class="sk"></div></td></tr>`).join("");
+};
+skeleton();
+
+async function loadList() {
+  $("refreshBtn").classList.add("spin");
+  try {
+    items = await api("/api/requests");
+    renderTable(true);
+    updateBadge();
+  } catch (e) {
+    items = [];
+    $("pdfBtn").disabled = true;
+    updateBadge();
+    $("rows").innerHTML = `<tr><td colspan="9" class="empty err">${esc(e.message)}</td></tr>`;
+  } finally {
+    $("refreshBtn").classList.remove("spin");
+  }
 }
 
-function show(){
-  const v=(location.hash.replace('#/','')||'overview'); const key=V[v]?v:'overview';
-  $('ttl').textContent=V[key].t; $('sub').textContent=periodText()+(S.at?` · updated ${S.at.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})}`:'')+(DEMO?' · sample data':'');
-  document.querySelectorAll('.nv[data-v]').forEach(b=>{ b.classList.toggle('on',b.dataset.v===key); if(b.dataset.v===key) b.closest('.grp')?.classList.add('open'); });
-  if(S.err){ $('view').innerHTML=`<div class="card msg"><h2>Couldn't load analytics</h2><p>${esc(S.err)}</p><button class="btn pri" id="retry">Try again</button></div>`; $('retry').onclick=load; return; }
-  if(!S.data) return;
-  $('view').innerHTML=viewHtml(key); afterDraw(key);
-  document.querySelectorAll('[data-ct]').forEach(b=>b.onclick=()=>{ S.ct=b.dataset.ct; show(); });
-  document.querySelectorAll('th[data-s]').forEach(t=>t.onclick=()=>{ const k=t.dataset.s; S.sort=[k,S.sort[0]===k?-S.sort[1]:(k==='label'?1:-1)]; show(); });
-  const q=$('q'); if(q) q.oninput=()=>{ S.q=q.value; S.lim=15; const p=q.selectionStart; show(); const n=$('q'); n.focus(); n.setSelectionRange(p,p); };
-  const mo=$('more'); if(mo) mo.onclick=()=>{ S.lim+=15; show(); };
+function renderTable(animate = true) {
+  const list = view(), pages = Math.max(1, Math.ceil(list.length / PER));
+  page = Math.min(Math.max(1, page), pages);
+  const slice = list.slice((page - 1) * PER, page * PER);
+
+  $("count").textContent = !items.length ? "" : list.length === items.length ? `${items.length} submission${items.length === 1 ? "" : "s"}` : `${list.length} of ${items.length} shown`;
+  $("pdfBtn").disabled = !list.length;
+  $("pager").innerHTML = list.length > PER
+    ? `<span>Showing ${(page - 1) * PER + 1}-${Math.min(page * PER, list.length)} of ${list.length}</span><div><button type="button" data-pg="-1" ${page <= 1 ? "disabled" : ""}>‹ Prev</button><span class="pg">${page} / ${pages}</span><button type="button" data-pg="1" ${page >= pages ? "disabled" : ""}>Next ›</button></div>`
+    : "";
+
+  if (!slice.length) {
+    $("rows").innerHTML = `<tr><td colspan="9" class="empty"><span class="eico">${I_INBOX}</span><strong>${items.length ? "No matching submissions" : "No 201 submissions yet"}</strong>${items.length ? "Try a different search or clear the filter." : "Submissions from recruiters will appear here."}</td></tr>`;
+    syncPicked();
+    return;
+  }
+
+  $("rows").innerHTML = slice.map((r, i) => {
+    const miss = missingOf(r), st = statusOf(r), n = filesOf(r).length, done = REQS.length - miss.length;
+    const locked = !!r.checkedBy && r.checkedBy !== me();   // checked by ANOTHER HR -> locked for you (email still works)
+    const lockTitle = locked ? `Locked: already checked by ${esc(r.checkedBy)}` : "";
+    const note = r.remarks && !/^Kulang:/i.test(r.remarks) ? `<div class="sub">Note: ${esc(r.remarks)}</div>` : "";
+    const prog = `<div class="prog"><span><i class="${miss.length ? "" : "full"}" style="width:${Math.round(done / REQS.length * 100)}%"></i></span><b>${done}/${REQS.length}</b></div>`;
+    const remarks = miss.length
+      ? `${prog}<div class="warn">Kulang: ${esc(miss.join(", "))}</div>${note}`
+      : `${prog}<div class="ok">Complete</div><div class="sub">${fmt(completedAt(r))}</div>${note}`;
+    const action = st.k === "approved"
+      ? `<span class="ok">✓ Approved</span>`
+      : `<button type="button" class="approve" data-act="approve" ${miss.length ? 'disabled title="May kulang pang documents"' : ""}>Approve</button>`;
+    return `<tr data-id="${esc(r._id)}" class="${animate ? "ani" : ""}${picked.has(String(r._id)) ? " sel-on" : ""}" style="--i:${i}">
+      <td class="sel"><input type="checkbox" class="pick" data-pick ${picked.has(String(r._id)) ? "checked" : ""} aria-label="Select ${esc(r.fullName)}"></td>
+      <td><div class="person">${avatar(r.fullName)}<div><div class="pn"><button type="button" class="namelink" data-act="formpdf" title="${locked ? lockTitle : "Click to download the 201 form (PDF)"}" ${locked ? "disabled" : ""}>${esc(r.fullName)}</button></div><div class="sub">${esc(r.email || "—")}</div></div></div></td>
+      <td class="addr">${esc(r.contactNumber || "—")}${r.residence ? `<div class="sub" style="word-break:normal">📍 ${esc(r.residence)}</div>` : ""}</td>
+      <td>${esc(r.supervisorName || "—")}${r.company ? `<div class="sub"><b>${esc(r.company)}</b></div>` : ""}${r.supervisorEmail ? `<div class="sub">${esc(r.supervisorEmail)}</div>` : ""}${r.supervisorMobile ? `<div class="sub">📞 ${esc(r.supervisorMobile)}</div>` : ""}</td>
+      <td class="rem">${remarks}</td>
+      <td><span class="pill ${st.k}">${st.t}</span></td>
+      <td><button type="button" class="viewbtn" data-act="docs" ${n && !locked ? "" : "disabled"} ${locked ? `title="${lockTitle}"` : ""}>${EYE} ${!n ? "No files" : locked ? "Locked" : `View (${n})`}</button></td>
+      <td class="chk">${r.checkedBy
+        ? `<div class="chkby">${avatar(r.checkedBy, "sm")}<div><div class="by">${esc(r.checkedBy)}</div><div class="sub">${fmt(r.checkedAt)}</div></div></div>`
+        : `<span class="sub">Not yet checked</span>`}</td>
+      <td><div class="acts">
+        <button type="button" class="rowpdf" data-act="pdf" title="${locked ? lockTitle : "Download 201 folder (ZIP)"}" aria-label="Download 201 folder of ${esc(r.fullName)}" ${locked ? "disabled" : ""}>${DL}</button>
+        <button type="button" class="rowmail" data-act="email" title="${r.supervisorEmail ? "Email the coordinator / recruiter" : "No coordinator email on this record"}" aria-label="Email the coordinator of ${esc(r.fullName)}" ${r.supervisorEmail ? "" : "disabled"}>${MAIL}</button>
+        ${action}
+      </div></td>
+    </tr>`;
+  }).join("");
+  syncPicked();
 }
 
-// ---------- NAV BUILD & EVENTS ----------
-$('nav').innerHTML=NAV.map(n=> n.length===1 ? `<a href="#/${n[0]}" class="nv" data-v="${n[0]}">${V[n[0]].t}</a>`
-  : `<div class="grp"><button class="nv"><span>${n[0]}</span><span class="ch">▶</span></button><div class="sub">${n[1].map(k=>`<a href="#/${k}" class="nv" data-v="${k}">${V[k].t}</a>`).join('')}</div></div>`).join('');
-document.querySelectorAll('.grp>.nv').forEach(b=>b.onclick=()=>b.parentElement.classList.toggle('open'));
-window.addEventListener('hashchange',()=>{ S.q='';S.lim=15;S.ct=null;S.sort=['count',-1]; $('side').classList.remove('show'); show(); });
-['fCo','fYr','fMo','fCmp'].forEach(id=>$(id).onchange=load);
-$('bRef').onclick=load; $('bPrt').onclick=()=>print(); $('burger').onclick=()=>$('side').classList.toggle('show');
-$('bCsv').onclick=()=>{ if(!S.data) return; const v=location.hash.replace('#/','')||'overview',c=V[v]||V.overview; let rows;
-  if(c.k) rows=[[c.l,'Submissions'],...S.data[c.k].map(r=>[r.label,r.count])]; else if(v==='compliance') rows=[['Company','Client','Position','Started','Submitted','Hours late'],...S.data.lateList.map(r=>[r.company,r.client,r.position,r.start,r.submitted,r.hoursLate])];
-  else rows=[['Metric','Value'],['Total',S.data.kpi.total],['On time',S.data.kpi.onTime],['Late',S.data.kpi.late],['On-time rate %',S.data.kpi.onTimeRate],['Avg hours to submit',S.data.kpi.avgLagHours]];
-  const csv=rows.map(r=>r.map(x=>`"${String(x).replace(/"/g,'""')}"`).join(',')).join('\n'); const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'})); a.download=`gm-${v}-${params().year||'all'}.csv`; a.click(); };
-setInterval(()=>{ if(!document.hidden && !S.err) load(); }, 300000);   // auto-refresh every 5 minutes
+/* ---------- Analytics dashboard (all submissions, not affected by search / filter) ---------- */
+let anSig = "";
+const hb = (rows, c) => rows.length
+  ? rows.map(([l, v]) => { const m = Math.max(1, ...rows.map((x) => x[1])); return `<div class="hb"><span class="hl" title="${esc(l)}">${esc(l)}</span><span class="ht"><i style="width:${v / m * 100}%;background:${c}"></i></span><b>${v}</b></div>`; }).join("")
+  : `<div class="sub">Nothing to show</div>`;
 
-// ---------- SAMPLE DATA (?demo) ----------
-function mock(p){ const R=n=>Math.floor(Math.random()*n), y=+p.year||now.getFullYear(), m=+p.month||0, pad=n=>String(n).padStart(2,'0');
-  const split=(L,T)=>{ const w=L.map(()=>1+Math.random()*5),s=w.reduce((a,b)=>a+b); let r=T; return L.map((l,i)=>{ const c=i===L.length-1?r:Math.min(r,Math.round(T*w[i]/s)); r-=c; return {label:l,count:c}; }).sort((a,b)=>b.count-a.count); };
-  const T=(m?40:380)+R(m?50:260), late=Math.round(T*(.08+Math.random()*.1)), cm=m||(now.getMonth()+1), dn=new Date(y,cm,0).getDate();
-  const months=m?[`${y}-${pad(m)}`]:MON.map((_,i)=>`${y}-${pad(i+1)}`), pay=months.flatMap(x=>[`${x} 1st (1-15)`,`${x} 2nd (16-end)`]);
-  const asc=a=>a.sort((a,b)=>a.label.localeCompare(b.label));
-  return new Promise(ok=>setTimeout(()=>ok({ kpi:{total:T,onTime:T-late,late,onTimeRate:Math.round((T-late)/T*1000)/10,avgLagHours:30+R(40),lateHours:72},
-   perMonth:asc(split(months,T)), perYear:asc(split([y-2,y-1,y].map(String),T)), perPayroll:asc(split(pay,T)),
-   perCompany:split(['Prestige','Regcris','Tmarks','CoMerch'],T), perClient:split(['BACH','COFO','JER','JERO','MRCOP','REBIP','SUSAP','SUSIP'],T),
-   perRegion:split(['NCR','Region IV-A','Region III','Region VII','Region XI','CAR'],T), perProvince:split(['Metro Manila','Cavite','Laguna','Bulacan','Cebu','Davao del Sur','Pampanga','Batangas'],T),
-   perCity:split(['Quezon City','Makati','Taguig','Cebu City','Davao City','Pasig','Imus','Calamba'],T), perPosition:split(['Sales Associate','Merchandiser','Promodiser','Cashier','Team Leader','Warehouse Staff','Encoder'],T),
-   perGender:split(['Female','Male'],T), perAge:asc(split(['18-24','25-34','35-44','45-54','55+'],T)),
-   calendar:Array.from({length:dn},(_,i)=>({date:`${y}-${pad(cm)}-${pad(i+1)}`,onTime:R(9),late:R(4)===0?1+R(2):0})),
-   lateList:Array.from({length:Math.min(late,10)},(_,i)=>({company:['Prestige','Regcris','Tmarks','CoMerch'][R(4)],client:['BACH','COFO','JER','SUSAP'][R(4)],position:['Merchandiser','Cashier','Promodiser','Team Leader'][R(4)],start:`${y}-${pad(cm)}-0${1+R(8)}`,submitted:`${y}-${pad(cm)}-${10+R(15)}`,hoursLate:96-i*7+R(5)})) }),350)); }
+function renderAnalytics() {
+  const el = $("an");
+  const sig = items.map((r) => [r._id, r.status, r.checkedBy || "", filesOf(r).length, r.workArea || ""].join(":")).join("|");
+  if (sig === anSig) return;                       // nothing changed: do not redraw (keeps typing in search smooth)
+  anSig = sig;
+  const N = items.length;
+  if (!N) { el.innerHTML = ""; return; }
 
-guard('manager', () => load());   // only managers get in; data loads after the role check
+  const st = { pending: 0, complete: 0, approved: 0 };
+  items.forEach((r) => st[statusOf(r).k]++);
+  const done = st.complete + st.approved, unchecked = items.filter((r) => !r.checkedBy).length;
+  const pct = (a) => Math.round(a / N * 100);
+  const days = items.filter((r) => !missingOf(r).length).map((r) => (new Date(completedAt(r)) - new Date(r.createdAt)) / 864e5);
+  const avg = days.length ? Math.max(0, days.reduce((a, b) => a + b, 0) / days.length) : null;
+
+  // submissions per week (last 8 weeks)
+  const WK = 8, wk = Array(WK).fill(0), now = Date.now();
+  items.forEach((r) => { const i = Math.floor((now - new Date(r.createdAt || 0)) / (7 * 864e5)); if (i >= 0 && i < WK) wk[WK - 1 - i]++; });
+  const wm = Math.max(1, ...wk);
+  const bars = wk.map((v, i) => {
+    const h = Math.round(v / wm * 80), x = 10 + i * 38, d = new Date(now - (WK - 1 - i) * 7 * 864e5);
+    return `<rect x="${x}" y="${100 - h}" width="26" height="${h}" rx="5" fill="url(#anBar)"/><text x="${x + 13}" y="${95 - h}" text-anchor="middle" font-size="9" font-weight="700" fill="#2a1215">${v || ""}</text><text x="${x + 13}" y="116" text-anchor="middle" font-size="8" fill="#7a5b5f">${d.toLocaleDateString("en-US", { month: "short", day: "numeric" })}</text>`;
+  }).join("");
+
+  // status donut
+  const segs = [["Approved", st.approved, "#15803d"], ["To approve", st.complete, "#1d4ed8"], ["Pending", st.pending, "#b45309"]];
+  let cum = 0;
+  const arcs = segs.map(([, v, c]) => { const p = v / N * 100, a = `<circle cx="21" cy="21" r="15.9155" fill="none" stroke="${c}" stroke-width="5" stroke-dasharray="${p} ${100 - p}" stroke-dashoffset="${-cum}" transform="rotate(-90 21 21)"/>`; cum += p; return a; }).join("");
+
+  // work area, missing documents, coordinators to chase
+  const area = ["Luzon", "Visayas", "Mindanao"].map((a) => [a, items.filter((r) => String(r.workArea || "").toLowerCase() === a.toLowerCase()).length]);
+  area.push(["Not assigned", items.filter((r) => !["luzon", "visayas", "mindanao"].includes(String(r.workArea || "").toLowerCase())).length]);
+  const miss = REQS.map((n) => [n, items.filter((r) => statusOf(r).k === "pending" && !fileOf(r, n)).length]).filter((x) => x[1]).sort((a, b) => b[1] - a[1]);
+  const co = {};
+  items.filter((r) => statusOf(r).k === "pending").forEach((r) => { const k = r.supervisorName || "No coordinator"; co[k] = (co[k] || 0) + 1; });
+  const chase = Object.entries(co).sort((a, b) => b[1] - a[1]).slice(0, 5);
+
+  const kpi = (i, label, val, unit, p, grad, note) =>
+    `<div class="ac k" style="--i:${i}"><h3 class="at">${label}</h3><div class="kv">${val}<small>${unit}</small></div>${p === null ? "" : `<div class="kb"><i style="width:${p}%;background:${grad}"></i></div>`}<div class="sub">${note}</div></div>`;
+
+  el.innerHTML =
+    kpi(0, "Completion rate", pct(done), "%", pct(done), "linear-gradient(90deg,#f59e0b,#15803d)", `${done} of ${N} have all documents`) +
+    kpi(1, "Approval rate", pct(st.approved), "%", pct(st.approved), "linear-gradient(90deg,#60a5fa,#1d4ed8)", `${st.approved} approved, ${st.complete} waiting`) +
+    kpi(2, "Avg. time to complete", avg === null ? "—" : avg < 1 ? "&lt;1" : avg.toFixed(1), avg === null ? "" : " days", null, "", "From first submit to last document") +
+    kpi(3, "Not yet checked", unchecked, ` / ${N}`, pct(unchecked), "linear-gradient(90deg,#ef4444,#b91c1c)", unchecked ? "Waiting for HR review" : "All reviewed") +
+    `<div class="ac w7" style="--i:4"><h3 class="at">Submissions per week</h3><svg viewBox="0 0 320 124" width="100%" role="img" aria-label="Submissions per week, last 8 weeks"><defs><linearGradient id="anBar" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ef4444"/><stop offset="1" stop-color="#b91c1c"/></linearGradient></defs><line x1="0" y1="100" x2="320" y2="100" stroke="#f0d4d6"/>${bars}</svg></div>` +
+    `<div class="ac w5" style="--i:5"><h3 class="at">Status breakdown</h3><div class="dn"><svg viewBox="0 0 42 42" role="img" aria-label="Status breakdown"><circle cx="21" cy="21" r="15.9155" fill="none" stroke="#f6e3e4" stroke-width="5"/>${arcs}<text x="21" y="22.5" text-anchor="middle" font-size="7" font-weight="800" fill="#2a1215">${pct(done)}%</text><text x="21" y="28" text-anchor="middle" font-size="3" fill="#7a5b5f">COMPLETE</text></svg><div class="lg">${segs.map(([l, v, c]) => `<span><i style="background:${c}"></i>${l}<b>${v}</b></span>`).join("")}</div></div></div>` +
+    `<div class="ac" style="--i:6"><h3 class="at">By work area</h3>${hb(area, "linear-gradient(90deg,#ef4444,#b91c1c)")}</div>` +
+    `<div class="ac" style="--i:7"><h3 class="at">Most missing documents</h3>${hb(miss, "linear-gradient(90deg,#f59e0b,#ef4444)")}</div>` +
+    `<div class="ac" style="--i:8"><h3 class="at">Coordinators to follow up</h3>${hb(chase, "linear-gradient(90deg,#fb7185,#7f1d1d)")}</div>`;
+}
+
+/* ---------- Actions ---------- */
+$("rows").addEventListener("click", async (e) => {
+  const btn = e.target.closest("button[data-act]");
+  if (!btn) return;
+  const id = btn.closest("tr").dataset.id, r = items.find((x) => x._id === id);
+  if (!r) return;
+  if (btn.dataset.act === "docs") return viewAndMark(r, btn);   // has its own lock guard inside
+  if (btn.dataset.act === "approve") openApprove(r);
+  if (btn.dataset.act === "pdf") {
+    if (r.checkedBy && r.checkedBy !== me()) { say(`⚠ Locked: already checked by ${r.checkedBy}.`, "err"); return; }
+    downloadRecordPdf(r, btn);
+  }
+  if (btn.dataset.act === "email") openEmail([r]);
+  if (btn.dataset.act === "formpdf") {
+    if (r.checkedBy && r.checkedBy !== me()) { say(`⚠ Locked: already checked by ${r.checkedBy}.`, "err"); return; }
+    downloadFormPdf(r, btn);
+  }
+});
+
+/* ---------- Approve form pop-up ---------- */
+let pending = null;
+function openApprove(r) {
+  pending = r;
+  $("apForm").reset();
+  $("apErr").textContent = "";
+  $("apName").textContent = r.fullName || "—";
+  $("apEmail").textContent = r.email || "—";
+  $("apDocs").textContent = `${filesOf(r).length} file${filesOf(r).length === 1 ? "" : "s"} · all required documents complete`;
+  $("apSubmit").disabled = false;
+  $("apSubmit").classList.remove("loading");
+  $("apSubmit").textContent = "Approve";
+  $("ap").showModal();
+}
+$("apCancel").addEventListener("click", () => closeAnim($("ap")));
+$("apForm").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  if (!pending) return;
+  const r = pending, submit = $("apSubmit");
+  submit.disabled = true; submit.classList.add("loading");
+  $("apErr").textContent = "";
+  try {
+    // Sent as form data (multipart/form-data), not JSON.
+    // Do NOT set Content-Type: the browser adds it together with the boundary.
+    const form = new FormData();
+    form.append("status", "approved");
+    const note = $("apNote").value.trim();
+    if (note) form.append("approvalNote", note);
+    await api(`/api/requests/${r._id}/status`, { method: "PATCH", body: form });
+    closeAnim($("ap"));
+    await loadList();
+    say(`${r.fullName} approved.`, "ok");
+  } catch (err) {
+    $("apErr").textContent = err.message;
+    submit.disabled = false;
+  } finally {
+    submit.classList.remove("loading");
+  }
+});
+$("refreshBtn").addEventListener("click", () => { say(""); loadList(); });
+
+/* ---------- Pick employees, then email each one's coordinator / recruiter ---------- */
+const picked = new Set();                                   // ids of the ticked rows
+const pickedRecords = () => items.filter((r) => picked.has(String(r._id)));
+function syncPicked() {
+  const ids = new Set(items.map((r) => String(r._id)));
+  [...picked].forEach((id) => { if (!ids.has(id)) picked.delete(id); });
+  const b = $("mailSelBtn"), label = `✉ Email selected (${picked.size})`;
+  if (b.textContent !== label) { b.classList.remove("bump"); void b.offsetWidth; b.classList.add("bump"); }
+  b.textContent = label;
+  b.disabled = !picked.size;
+  const vl = view(), inView = vl.filter((r) => picked.has(String(r._id))).length, all = $("pickAll");
+  all.checked = vl.length > 0 && inView === vl.length;
+  all.indeterminate = inView > 0 && inView < vl.length;
+}
+$("rows").addEventListener("change", (e) => {
+  const cb = e.target.closest("input[data-pick]");
+  if (!cb) return;
+  const tr = cb.closest("tr"), id = tr.dataset.id;
+  if (cb.checked) picked.add(id); else picked.delete(id);
+  tr.classList.toggle("sel-on", cb.checked);
+  syncPicked();
+});
+$("pickAll").addEventListener("change", (e) => {
+  view().forEach((r) => { if (e.target.checked) picked.add(String(r._id)); else picked.delete(String(r._id)); });
+  document.querySelectorAll("#rows tr[data-id]").forEach((tr) => {
+    const on = picked.has(tr.dataset.id);
+    tr.classList.toggle("sel-on", on);
+    const cb = tr.querySelector("input[data-pick]"); if (cb) cb.checked = on;
+  });
+  syncPicked();
+});
+$("mailSelBtn").addEventListener("click", () => openEmail(pickedRecords()));
+
+// One email per coordinator address. Employees under the same coordinator go into the same email.
+let emailGroups = [];     // [{ email, name, records: [...] }]
+const lineFor = (r) => { const m = missingOf(r); return `- ${r.fullName}: ${m.length ? "Kulang: " + m.join(", ") : "Complete"}`; };
+
+function openEmail(list) {
+  const withMail = list.filter((r) => r.supervisorEmail && r.supervisorEmail.trim());
+  const map = new Map();
+  withMail.forEach((r) => {
+    const key = r.supervisorEmail.trim().toLowerCase();
+    if (!map.has(key)) map.set(key, { email: r.supervisorEmail.trim(), name: r.supervisorName || "", records: [] });
+    map.get(key).records.push(r);
+  });
+  emailGroups = [...map.values()];
+  if (!emailGroups.length) { say("Walang coordinator email sa mga napili.", "err"); return; }
+
+  const n = emailGroups.length;
+  emFiles = []; renderFiles(); $("emFileErr").textContent = ""; $("emFileWarn").hidden = n < 2;
+  $("emFor").textContent = `${n} email${n === 1 ? "" : "s"} · ${withMail.length} employee${withMail.length === 1 ? "" : "s"}`;
+  $("emTo").innerHTML = emailGroups.map((g) =>
+    `<li><strong>${esc(g.name || "Coordinator")}</strong> &lt;${esc(g.email)}&gt;<span class="sub">${esc(g.records.map((r) => r.fullName).join(", "))}</span></li>`).join("");
+  $("emSubject").value = withMail.length === 1 ? `201 Submission: ${withMail[0].fullName}` : "201 Submission update";
+  $("emMsg").value = "Hi {coordinator},\n\nUpdate po sa 201 submission ng mga sumusunod:\n{employees}\n\nPaki-submit po agad ang mga kulang. Salamat.";
+  const skipped = list.length - withMail.length;
+  $("emErr").textContent = skipped ? `${skipped} napili ang walang coordinator email at hindi isasama.` : "";
+  $("emSend").disabled = false;
+  $("emSend").textContent = n === 1 ? "Send email" : `Send ${n} emails`;
+  $("em").showModal();
+  $("em").scrollTop = 0;            // always start at the top of the pop-up
+}
+$("emCancel").addEventListener("click", () => closeAnim($("em")));
+
+/* attach contract file(s) */
+const MAX_FILE = 10 * 1024 * 1024;
+let emFiles = [];
+function renderFiles() {
+  $("emFileList").innerHTML = emFiles.map((f, i) =>
+    `<li><span>📎 ${esc(f.name)} <span class="sub">(${(f.size / 1048576).toFixed(1)} MB)</span></span><button type="button" data-rm="${i}" aria-label="Remove ${esc(f.name)}">✕</button></li>`).join("");
+}
+$("emFiles").addEventListener("change", (e) => {
+  const msgs = [];
+  const f = e.target.files[0];
+  if (f) {
+    if (!/\.pdf$/i.test(f.name)) msgs.push(`${f.name}: PDF lang ang puwede.`);
+    else if (f.size > MAX_FILE) msgs.push(`${f.name}: lampas sa 10 MB.`);
+    else emFiles = [f];            // one contract; picking another one replaces it
+  }
+  e.target.value = "";
+  renderFiles();
+  $("emFileErr").textContent = msgs.join(" ");
+});
+$("emFileList").addEventListener("click", (e) => {
+  const b = e.target.closest("button[data-rm]");
+  if (!b) return;
+  emFiles.splice(Number(b.dataset.rm), 1);
+  renderFiles();
+});
+
+/* ---------- Sending animation + send logic ---------- */
+const sd = $("sd");
+let sending = false;
+let sendCtx = null;                                  // { subject, tpl, sent }
+sd.addEventListener("cancel", (e) => { if (sending) e.preventDefault(); });   // Esc is blocked while sending
+
+const setFill = (f) => { $("sdFill").style.width = Math.round(f * 100) + "%"; };
+
+function sdRender(groups, states) {
+  $("sdList").innerHTML = groups.map((g, i) => {
+    const s = states[i], c = g.records.length;
+    const icon = s.k === "ok" ? "✓" : s.k === "err" ? "✕" : s.k === "run" ? `<span class="sd-spin"></span>` : "";
+    return `<li class="${s.k}"><span class="sd-ic">${icon}</span><span class="sd-t"><strong>${esc(g.name || "Coordinator")}</strong><span class="sub">${esc(g.email)} · ${c} employee${c === 1 ? "" : "s"}</span>${s.k === "err" ? `<span class="sd-e">${esc(s.msg)}</span>` : ""}</span></li>`;
+  }).join("");
+}
+
+async function sdRun(groups) {
+  const { subject, tpl } = sendCtx;
+  const n = groups.length;
+  const states = groups.map(() => ({ k: "wait" }));
+  const failedGroups = [];
+  sending = true;
+  sd.className = "sd is-sending";
+  $("sdFoot").hidden = true;
+  $("sdTitle").textContent = n === 1 ? "Sending email..." : "Sending emails...";
+  $("sdSub").textContent = "Please wait, don't close this page.";
+  setFill(0.04);
+  sdRender(groups, states);
+  if (!sd.open) sd.showModal();
+
+  for (let i = 0; i < n; i++) {
+    const g = groups[i];
+    states[i] = { k: "run" };
+    sdRender(groups, states);
+    $("sdSub").textContent = `${i + 1} of ${n} · ${g.email}`;
+    const t0 = Date.now();
+    const list = g.records.map(lineFor).join("\n");
+    const message = tpl.replaceAll("{coordinator}", () => g.name || "Coordinator").replaceAll("{employees}", () => list);
+    try {
+      // multipart/form-data: do NOT set Content-Type, the browser adds it with the boundary
+      const fd = new FormData();
+      fd.append("ids", JSON.stringify(g.records.map((r) => r._id)));
+      fd.append("subject", subject);
+      fd.append("message", message);
+      emFiles.forEach((f) => fd.append("attachments", f));
+      await api("/api/requests/email", { method: "POST", body: fd });
+      states[i] = { k: "ok" };
+      sendCtx.sent++;
+    } catch (err) {
+      states[i] = { k: "err", msg: err.message };
+      failedGroups.push(g);
+    }
+    const wait = 600 - (Date.now() - t0);          // each step stays visible long enough to see
+    if (wait > 0) await sleep(wait);
+    sdRender(groups, states);
+    setFill((i + 1) / n);
+  }
+  sending = false;
+
+  if (!failedGroups.length) {
+    sd.className = "sd is-done";
+    const total = sendCtx.sent;
+    $("sdTitle").textContent = total === 1 ? "Email sent!" : `${total} emails sent!`;
+    $("sdSub").textContent = "The coordinator has been notified.";
+    await sleep(1800);
+    sd.close();
+    closeAnim($("em"));
+    picked.clear();
+    renderTable(false);
+    say(`${total} email${total === 1 ? "" : "s"} sent.`, "ok");
+  } else {
+    emailGroups = failedGroups;                    // retry only the ones that failed
+    sd.className = "sd is-fail";
+    $("sdTitle").textContent = `${n - failedGroups.length} sent, ${failedGroups.length} failed`;
+    $("sdSub").textContent = "Some emails did not go through.";
+    $("sdRetry").textContent = `Retry ${failedGroups.length} failed`;
+    $("sdFoot").hidden = false;
+  }
+}
+
+$("sdRetry").addEventListener("click", () => { if (emailGroups.length) sdRun(emailGroups); });
+$("sdClose").addEventListener("click", () => {
+  sd.close();
+  const n = emailGroups.length, btn = $("emSend");
+  $("emErr").textContent = `${sendCtx.sent} sent, ${n} failed. You can retry from here.`;
+  btn.disabled = false;
+  btn.textContent = `Retry ${n} failed`;
+});
+
+$("emForm").addEventListener("submit", (e) => {
+  e.preventDefault();
+  if (!emailGroups.length || sending) return;
+  $("emErr").textContent = "";
+  $("emSend").disabled = true;
+  sendCtx = { subject: $("emSubject").value.trim(), tpl: $("emMsg").value.trim(), sent: 0 };
+  sdRun(emailGroups);
+});
+
+/* ---------- Download PDF (the rows currently shown: respects search / filter / sort) ---------- */
+// plain text for the PDF (standard PDF fonts can't draw long dashes)
+const plain = (s) => String(s ?? "").replace(/[\u2013\u2014]/g, "-").replace(/\s+/g, " ").trim();
+
+// Same remark the table shows, as plain text for the PDF
+function remarksText(r) {
+  const miss = missingOf(r);
+  const note = r.remarks && !/^Kulang:/i.test(r.remarks) ? ` Note: ${plain(r.remarks)}` : "";
+  return (miss.length ? `Kulang: ${miss.join(", ")}.` : `Complete (${fmt(completedAt(r))}).`) + note;
+}
+
+// Work assignment as one line of plain text for the PDF
+const workText = (r) => [plain(r.workArea), plain(r.region), plain(r.province), plain(r.cityMunicipality)].filter(Boolean).join(" > ") || "-";
+
+// idle -> loading -> done -> idle (drives the button animation)
+function setPdfState(state) {
+  const b = $("pdfBtn");
+  b.classList.toggle("is-loading", state === "loading");
+  b.classList.toggle("is-done", state === "done");
+  b.setAttribute("aria-busy", String(state === "loading"));
+  $("pdfTxt").textContent = state === "loading" ? "Preparing PDF..." : state === "done" ? "Downloaded!" : "Download PDF";
+}
+
+$("pdfBtn").addEventListener("click", async () => {
+  const list = view();
+  if (!list.length) { say("No 201 Submission to download.", "err"); return; }
+  const jsPDF = window.jspdf && window.jspdf.jsPDF;
+  if (!jsPDF) { say("The PDF library did not load. Check your internet connection and refresh the page.", "err"); return; }
+
+  setPdfState("loading");
+  const started = Date.now();
+  await nextPaint();                       // let the loading animation paint before the heavy work
+
+  try {
+    const doc = new jsPDF({ orientation: "landscape", unit: "pt", format: "a4" });
+    const now = new Date();
+
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(16);
+    doc.setTextColor(127, 29, 29);
+    doc.text("201 Submission", 28, 34);
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(9);
+    doc.setTextColor(110, 90, 94);
+    doc.text(`Generated ${fmt(now)}  |  ${list.length} submission${list.length === 1 ? "" : "s"}`, 28, 50);
+
+    doc.autoTable({
+      startY: 62,
+      margin: { left: 28, right: 28, bottom: 36 },
+      head: [["Name", "Email", "Contact Number", "Recruiter / Company / Mobile", "Recruiter Email", "Work Assignment", "Status", "Checked By", "Remarks"]],
+      body: list.map((r) => [
+        plain(r.fullName) || "-",
+        plain(r.email) || "-",
+        plain(r.contactNumber) || "-",
+        [plain(r.supervisorName), plain(r.company), plain(r.supervisorMobile)].filter(Boolean).join("\n") || "-",
+        plain(r.supervisorEmail) || "-",
+        workText(r),
+        statusOf(r).t,
+        r.checkedBy ? plain(r.checkedBy) : "-",
+        remarksText(r)
+      ]),
+      styles: { font: "helvetica", fontSize: 7.5, cellPadding: 4, overflow: "linebreak", valign: "top", textColor: [42, 18, 21], lineColor: [240, 212, 214], lineWidth: 0.5 },
+      headStyles: { fillColor: [185, 28, 28], textColor: 255, fontStyle: "bold" },
+      alternateRowStyles: { fillColor: [255, 247, 247] },
+      columnStyles: {
+        0: { cellWidth: 80 },
+        1: { cellWidth: 100 },
+        2: { cellWidth: 58 },
+        3: { cellWidth: 95 },
+        4: { cellWidth: 95 },
+        5: { cellWidth: 85 },
+        6: { cellWidth: 45 },
+        7: { cellWidth: 65 }
+        // Remarks takes the remaining width
+      },
+      didDrawPage: (d) => {
+        doc.setFontSize(8);
+        doc.setTextColor(110, 90, 94);
+        doc.text(`Page ${d.pageNumber}`, doc.internal.pageSize.getWidth() - 28, doc.internal.pageSize.getHeight() - 16, { align: "right" });
+      }
+    });
+
+    // keep the loading animation visible for at least 700 ms so it never just flashes
+    const left = 700 - (Date.now() - started);
+    if (left > 0) await sleep(left);
+
+    const stamp = now.toISOString().slice(0, 10);
+    doc.save(`201-requests-${stamp}.pdf`);
+
+    setPdfState("done");
+    say("PDF downloaded.", "ok");
+    await sleep(1800);                     // show the green check for a moment
+  } catch (e) {
+    say("PDF failed: " + e.message, "err");
+  } finally {
+    setPdfState("idle");
+  }
+});
+
+/* ---------- Build the PDF of one employee (all details) ---------- */
+// Same fields as the staff "Add 201" form. Keep in sync if you add fields there.
+// "__age" is not a database field: it is computed from the date of birth (see valOf).
+const SEC = [
+  { h: "Supervisor Information", f: [
+    ["company", "Company"], ["supervisorName", "Supervisor name"], ["supervisorEmail", "Supervisor email"], ["supervisorMobile", "Supervisor mobile number"]] },
+  { h: "Employee Personal Information", f: [
+    ["lastName", "Last Name"], ["firstName", "First Name"], ["middleName", "Middle Name"],
+    ["dob", "Date of Birth"], ["__age", "Age"], ["pob", "Place of Birth"],
+    ["sex", "Sex"], ["civilStatus", "Civil Status"], ["nationality", "Nationality"],
+    ["residence", "Complete Address"], ["empEmail", "Email Address"], ["mobile", "Mobile Number"],
+    ["deptCode", "Department Code"], ["position", "Position"],
+    ["empStatus", "Employee Status"], ["dateHired", "Date Hired"]] },
+  { h: "Work Assignment", f: [
+    ["workArea", "Assigned work area (Luzon / Visayas / Mindanao)"], ["region", "Region"], ["province", "Province"], ["cityMunicipality", "City / Municipality"]] },
+  { h: "Family Information", f: [
+    ["fatherName", "Father's full name"], ["motherName", "Mother's full name"], ["spouse", "Spouse / Partner name"], ["dependents", "Number of dependents"]] },
+  { h: "Employment Information", f: [
+    ["client", "Client / Account"]] },
+  { h: "Government Information", f: [
+    ["sss", "SSS number"], ["philhealth", "PhilHealth number"], ["pagibig", "Pag-IBIG number"], ["tin", "BIR TIN"]] },
+  { h: "Emergency Contact", f: [
+    ["ecName", "Emergency contact name"], ["ecRelationship", "Relationship"], ["ecMobile", "Emergency contact mobile number"], ["ecAddress", "Emergency contact address"]] },
+  { h: "Education & Previous Employment", f: [
+    ["education", "Highest educational attainment"], ["school", "School / University"], ["course", "Course / Degree"],
+    ["yearGrad", "Year graduated / Last year in school"], ["prevWork", "Previous work experience"], ["prevDetails", "Previous employer, position & years"]] }
+];
+const DATE_FIELDS = ["dob", "dateHired"];
+const fmtDate = (d) => d ? new Date(d).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" }) : "";
+const calcAge = (d) => {
+  if (!d) return null;
+  const b = new Date(d), t = new Date();
+  if (isNaN(b)) return null;
+  let a = t.getFullYear() - b.getFullYear();
+  if (t.getMonth() < b.getMonth() || (t.getMonth() === b.getMonth() && t.getDate() < b.getDate())) a--;
+  return a >= 0 ? a : null;
+};
+const valOf = (r, n) => {
+  if (n === "__age") { const a = calcAge(r.dob); return a !== null ? `${a}` : "-"; }
+  const v = DATE_FIELDS.includes(n) ? fmtDate(r[n]) : r[n];
+  return v === undefined || v === null || v === "" ? "-" : plain(v);
+};
+
+// Returns the jsPDF document (not saved) and a safe file-name part
+function buildRecordPdf(r) {
+  const jsPDF = window.jspdf.jsPDF;
+
+  const doc = new jsPDF({ orientation: "portrait", unit: "pt", format: "a4" });
+  const W = doc.internal.pageSize.getWidth(), H = doc.internal.pageSize.getHeight();
+  const now = new Date(), st = statusOf(r), miss = missingOf(r), age = calcAge(r.dob);
+
+  // header band
+  doc.setFillColor(185, 28, 28);
+  doc.roundedRect(28, 24, W - 56, 52, 8, 8, "F");
+  doc.setFont("helvetica", "bold"); doc.setFontSize(16); doc.setTextColor(255, 255, 255);
+  doc.text("EMPLOYEE 201 FILE", 44, 46);
+  doc.setFont("helvetica", "normal"); doc.setFontSize(9);
+  doc.text("Recruitment | HRIS", 44, 62);
+  doc.text(`Printed ${fmt(now)}`, W - 44, 46, { align: "right" });
+
+  // name + summary
+  doc.setFont("helvetica", "bold"); doc.setFontSize(15); doc.setTextColor(42, 18, 21);
+  doc.text(plain(r.fullName) || "-", 28, 102);
+  doc.setFont("helvetica", "normal"); doc.setFontSize(9); doc.setTextColor(110, 90, 94);
+  const sub = [plain(r.position), plain(r.company)].filter(Boolean).join("  |  ");
+  if (sub) doc.text(sub, 28, 116);
+
+  doc.autoTable({
+    startY: 128,
+    margin: { left: 28, right: 28, bottom: 40 },
+    theme: "plain",
+    body: [
+      ["Status", st.t],
+      ["Date submitted", fmt(r.createdAt)],
+      ["Age", age !== null ? `${age} years old` : "-"],
+      ["Checked by", r.checkedBy ? `${plain(r.checkedBy)}${r.checkedAt ? " (" + fmt(r.checkedAt) + ")" : ""}` : "Not yet checked"],
+      // ONE last row: Complete -> "Remarks: Complete" (green) | may kulang -> "Deficiency: Missing SSS, Pag-Ibig" (red)
+      miss.length
+        ? ["Deficiency", "Missing " + miss.join(", ")]
+        : ["Remarks", "Complete" + (r.remarks && !/^Kulang:/i.test(r.remarks) ? " - " + plain(r.remarks) : "")]
+    ],
+    styles: { font: "helvetica", fontSize: 9, cellPadding: { top: 2, bottom: 2, left: 0, right: 8 }, textColor: [42, 18, 21], valign: "top" },
+    columnStyles: { 0: { cellWidth: 110, fontStyle: "bold", textColor: [122, 91, 95] } },
+    didParseCell: (d) => {
+      if (d.section === "body" && d.row.index === 4 && d.column.index === 1) {
+        d.cell.styles.fontStyle = "bold";
+        d.cell.styles.textColor = miss.length ? [180, 35, 24] : [6, 118, 71];
+      }
+    }
+  });
+
+  // one table per section
+  // pageBreak:"avoid"  -> the whole table moves to the next page instead of splitting (no orphan header)
+  // showHead:"firstPage" -> the header is not repeated if a long table still has to continue
+  SEC.forEach((s) => {
+    const rows = s.f
+      .filter(([n]) => n !== "prevDetails" || r.prevDetails)   // hide previous-employer line unless filled
+      .map(([n, l]) => [l, valOf(r, n)]);
+    doc.autoTable({
+      startY: doc.lastAutoTable.finalY + 14,
+      margin: { left: 28, right: 28, bottom: 40 },
+      pageBreak: "avoid",
+      showHead: "firstPage",
+      head: [[{ content: s.h.toUpperCase(), colSpan: 2 }]],
+      body: rows,
+      styles: { font: "helvetica", fontSize: 9, cellPadding: 5, textColor: [42, 18, 21], lineColor: [240, 212, 214], lineWidth: 0.5, valign: "top", overflow: "linebreak" },
+      headStyles: { fillColor: [253, 234, 234], textColor: [153, 27, 27], fontStyle: "bold", fontSize: 8.5 },
+      columnStyles: { 0: { cellWidth: 190, fontStyle: "bold", textColor: [122, 91, 95] } },
+      alternateRowStyles: { fillColor: [255, 250, 250] }
+    });
+  });
+
+  // document checklist (status only, no images)
+  const names = [RESUME, ...REQS, ...filesOf(r).map((f) => f.name).filter((n) => n.startsWith("Additional: "))];
+  doc.autoTable({
+    startY: doc.lastAutoTable.finalY + 14,
+    margin: { left: 28, right: 28, bottom: 40 },
+    pageBreak: "avoid",
+    showHead: "firstPage",
+    head: [[{ content: "DOCUMENTS", colSpan: 2 }]],
+    body: names.map((n) => {
+      const f = fileOf(r, n);
+      return [plain(n), f ? `Submitted ${fmt(f.uploadedAt || r.createdAt)}` : (n === RESUME ? "Not added" : "Missing")];
+    }),
+    styles: { font: "helvetica", fontSize: 9, cellPadding: 5, textColor: [42, 18, 21], lineColor: [240, 212, 214], lineWidth: 0.5, valign: "top" },
+    headStyles: { fillColor: [253, 234, 234], textColor: [153, 27, 27], fontStyle: "bold", fontSize: 8.5 },
+    columnStyles: { 0: { cellWidth: 190, fontStyle: "bold", textColor: [122, 91, 95] } },
+    alternateRowStyles: { fillColor: [255, 250, 250] },
+    didParseCell: (d) => {
+      if (d.section === "body" && d.column.index === 1 && /^(Missing|Not added)/.test(String(d.cell.raw))) d.cell.styles.textColor = [180, 35, 24];
+    }
+  });
+
+  // footer on every page
+  const pages = doc.getNumberOfPages();
+  for (let i = 1; i <= pages; i++) {
+    doc.setPage(i);
+    doc.setFont("helvetica", "normal"); doc.setFontSize(8); doc.setTextColor(110, 90, 94);
+    doc.text("Confidential | HR use only", 28, H - 18);
+    doc.text(`Page ${i} of ${pages}`, W - 28, H - 18, { align: "right" });
+  }
+
+  const safe = plain(r.fullName).replace(/[^\w\- ]+/g, "").trim().replace(/\s+/g, "-") || "employee";
+  return { doc, safe };
+}
+
+/* ---------- Download ZIP: 201 Submission / <Employee Name> / PDF + all files ---------- */
+const cleanName = (s) => plain(s).replace(/[\\/:*?"<>|]+/g, "").trim() || "file";
+
+const extOf = (f, blob) => {
+  const m = String(f.url).split("?")[0].match(/\.([a-z0-9]{2,5})$/i);
+  if (m) return m[1].toLowerCase();
+  const t = (blob.type || "").split("/")[1];
+  return t ? t.replace("jpeg", "jpg") : "bin";
+};
+
+async function downloadRecordPdf(r, btn) {
+  if (!(window.jspdf && window.jspdf.jsPDF) || !window.JSZip) {
+    say("A download library did not load. Check your internet connection and refresh the page.", "err");
+    return;
+  }
+  btn.disabled = true;
+  btn.classList.add("is-loading");          // bouncing arrow + pulsing ring on the row button
+  say(`Preparing folder for ${plain(r.fullName)}...`);
+  await nextPaint();
+
+  try {
+    const zip = new JSZip();
+    const folder = zip.folder("201 Submission").folder(cleanName(r.fullName) || "Employee");
+
+    // 1) the filled-up 201 form as PDF
+    const { doc, safe } = buildRecordPdf(r);
+    folder.file(`201-${safe}.pdf`, doc.output("blob"));
+
+    // 2) every document / file the employee sent
+    const failed = [];
+    const used = new Set();
+    for (const f of filesOf(r)) {
+      try {
+        const res = await fetch(f.url);
+        if (!res.ok) throw new Error(res.status);
+        const blob = await res.blob();
+        let base = cleanName(f.name), name = `${base}.${extOf(f, blob)}`, i = 2;
+        while (used.has(name.toLowerCase())) name = `${base} (${i++}).${extOf(f, blob)}`;
+        used.add(name.toLowerCase());
+        folder.file(name, blob);
+      } catch {
+        failed.push(f.name);
+      }
+    }
+    if (failed.length) folder.file("NOT-DOWNLOADED.txt", "These files could not be downloaded:\n" + failed.join("\n"));
+
+    // 3) save the ZIP
+    const out = await zip.generateAsync({ type: "blob" });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(out);
+    a.download = `201 Submission - ${cleanName(r.fullName)}.zip`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+
+    say(failed.length
+      ? `Downloaded ${plain(r.fullName)}, but ${failed.length} file(s) failed: ${failed.join(", ")}.`
+      : `Folder downloaded for ${plain(r.fullName)}.`, failed.length ? "err" : "ok");
+  } catch (e) {
+    say("Download failed: " + e.message, "err");
+  } finally {
+    btn.classList.remove("is-loading");
+    btn.disabled = false;
+  }
+}
+
+/* ---------- Click the name: download ONLY the 201 form PDF (no ZIP, no documents) ---------- */
+async function downloadFormPdf(r, btn) {
+  if (!(window.jspdf && window.jspdf.jsPDF)) {
+    say("The PDF library did not load. Check your internet connection and refresh the page.", "err");
+    return;
+  }
+  btn.disabled = true;
+  btn.classList.add("busy");
+  await nextPaint();
+  try {
+    const { doc, safe } = buildRecordPdf(r);
+    doc.save(`201-${safe}.pdf`);
+    say(`201 form downloaded for ${plain(r.fullName)}.`, "ok");
+  } catch (e) {
+    say("Download failed: " + e.message, "err");
+  } finally {
+    btn.classList.remove("busy");
+    btn.disabled = false;
+  }
+}
+
+/* ---------- Checked By ---------- */
+// Name of the admin who is logged in
+const me = () => {
+  const u = auth.currentUser;
+  return ($("userName").textContent || "").trim() || u.displayName || u.email || "Unknown";
+};
+
+// Click "View": the first HR to click is saved as "Checked By".
+// Only that HR can open / download the documents again. Other HR accounts are locked out. Email still works.
+async function viewAndMark(r, btn) {
+  const who = me();
+
+  // checked by ANOTHER HR -> locked for you
+  if (r.checkedBy && r.checkedBy !== who) {
+    say(`⚠ Locked: this 201 was already checked by ${r.checkedBy}${r.checkedAt ? " on " + fmt(r.checkedAt) : ""}.`, "err");
+    renderTable(false);
+    return;
+  }
+
+  // you are the one who checked it -> just open it again
+  if (r.checkedBy === who) {
+    openViewer(r);
+    return;
+  }
+
+  btn.disabled = true;
+  try {
+    const saved = await api(`/api/requests/${r._id}/checked`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ checkedBy: who })
+    });
+    r.checkedBy = saved.checkedBy || who;
+    r.checkedAt = saved.checkedAt || new Date().toISOString();
+  } catch (e) {
+    say("Could not save Checked By: " + e.message, "err");
+    btn.disabled = false;
+    return;                                   // the check was not saved, so do not open the files
+  }
+  renderTable(false);
+
+  // another HR clicked at the same moment and the server kept theirs
+  if (r.checkedBy !== who) {
+    say(`⚠ Locked: this 201 was already checked by ${r.checkedBy}.`, "err");
+    return;
+  }
+  openViewer(r);
+}
+
+/* ---------- Document viewer (photos / PDFs they sent) ---------- */
+function openViewer(r, warn = "") {
+  const files = [...filesOf(r)].sort((a, b) => {
+    const ia = ORDER.indexOf(a.name), ib = ORDER.indexOf(b.name);
+    return (ia < 0 ? 99 : ia) - (ib < 0 ? 99 : ib);
+  });
+  const miss = missingOf(r);
+  $("vwTitle").textContent = `Documents · ${r.fullName}`;
+  $("vwBody").innerHTML =
+    (warn ? `<div class="warnbox"><span>⚠</span><span>${esc(warn)}</span></div>` : "") +
+    (miss.length ? `<p class="warn">Kulang: ${esc(miss.join(", "))}</p>` : "") + files.map((f) => `
+    <figure class="vf">
+      <figcaption><strong>${esc(f.name)}</strong>
+        <span class="sub">Submitted: ${fmt(f.uploadedAt || r.createdAt)}${f.updatedAt ? " · Updated: " + fmt(f.updatedAt) : ""}</span></figcaption>
+      ${isPdf(f) ? `<iframe src="${esc(f.url)}" title="${esc(f.name)}" loading="lazy"></iframe>` : `<img src="${esc(f.url)}" alt="${esc(f.name)}" loading="lazy">`}
+      <div><a href="${esc(f.url)}" target="_blank" rel="noopener">Open in new tab</a></div>
+    </figure>`).join("");
+  $("vw").showModal();
+}
+$("vwClose").addEventListener("click", () => closeAnim($("vw")));
+
+guard("manager", () => { loadList(); });
 </script>
 </body>
 </html>

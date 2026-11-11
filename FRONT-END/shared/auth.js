@@ -19,8 +19,8 @@ const SUB = {
   manager: { login: "Log in to review and approve requests.", register: "Create your HR manager account." }
 };
 
-// Where each role goes after logging in (absolute paths, so they work from / and /hr/login)
-const DASHBOARD = { manager: "/manager/", staff: "/staff/" };
+// Where each role goes after logging in (exact file paths, so no hash routing is involved)
+const DASHBOARD = { manager: "/manager/index.html", staff: "/staff/" };
 
 function render() {
   const { role, mode } = form.dataset;
