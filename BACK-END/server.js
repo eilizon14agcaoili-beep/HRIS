@@ -322,6 +322,7 @@ app.get('/api/analytics/201', requireAuth, requireRole('manager'), async (req, r
     const q = {};
     if (company && company !== 'all') q[F.company] = company;
 
+    const totalInDb = await Request201.estimatedDocumentCount();   // all records, ignoring filters
     let docs = await Request201.find(q).lean();
 
     // attach submitted date + filter by year/month (by submission date)
@@ -371,14 +372,15 @@ app.get('/api/analytics/201', requireAuth, requireRole('manager'), async (req, r
       },
       perMonth, perYear, perPayroll,
       perCompany:  tally(rows, r => val(r.d, 'company')),
-      perClient:   tally(rows, r => val(r.d, 'client')).slice(0, 10),
+      perClient:   tally(rows, r => val(r.d, 'client')).slice(0, 200),
       perRegion:   tally(rows, r => val(r.d, 'region')),
-      perProvince: tally(rows, r => val(r.d, 'province')).slice(0, 10),
-      perCity:     tally(rows, r => val(r.d, 'city')).slice(0, 10),
-      perPosition: tally(rows, r => val(r.d, 'position')).slice(0, 10),
+      perProvince: tally(rows, r => val(r.d, 'province')).slice(0, 200),
+      perCity:     tally(rows, r => val(r.d, 'city')).slice(0, 200),
+      perPosition: tally(rows, r => val(r.d, 'position')).slice(0, 200),
       perGender:   tally(rows, r => val(r.d, 'gender')),
       perAge:      tally(rows, r => bandOf(ageOf(r.d))),
       calendar: Object.values(cal),
+      meta: { db: mongoose.connection.name, collection: Request201.collection.name, totalInDb },
       lateList
     });
   } catch (err) {
