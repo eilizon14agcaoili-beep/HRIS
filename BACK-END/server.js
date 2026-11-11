@@ -9,14 +9,16 @@ const Request201 = require("./models/Request201");
 const { requireAuth, requireRole } = require("./middleware/auth");
 const { mailer } = require("./utils/mailer");
 
-// Firebase (accounts)
-admin.initializeApp({
-  credential: admin.credential.cert({
-    projectId: process.env.FIREBASE_PROJECT_ID,
-    clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-    privateKey: process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, "\n")
-  })
-});
+// Firebase (accounts). Guarded so it doesn't initialize twice on warm serverless calls.
+if (!admin.apps.length) {
+  admin.initializeApp({
+    credential: admin.credential.cert({
+      projectId: process.env.FIREBASE_PROJECT_ID,
+      clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
+      privateKey: (process.env.FIREBASE_PRIVATE_KEY || "").replace(/\\n/g, "\n")
+    })
+  });
+}
 
 // Cloudinary (requirement files)
 cloudinary.config({
@@ -25,10 +27,10 @@ cloudinary.config({
   api_secret: process.env.CLOUDINARY_API_SECRET
 });
 
-// MongoDB (201 requests)
+// MongoDB (201 requests). Do NOT call process.exit() here: it kills the serverless function.
 mongoose.connect(process.env.MONGODB_URI)
   .then(() => console.log("MongoDB connected"))
-  .catch((e) => { console.error(e); process.exit(1); });
+  .catch((e) => console.error("MongoDB connection error:", e.message));
 
 const app = express();
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 10 * 1024 * 1024 } });
@@ -76,7 +78,7 @@ const FIELDS = [
   "nationality", "residence", "empEmail", "mobile",
   "fatherName", "motherName", "spouse", "dependents",
   "dateHired", "empStatus", "client", "deptCode",
-    "workArea", "region", "province", "city", "cityMunicipality",
+  "workArea", "region", "province", "city", "cityMunicipality",
   "sss", "philhealth", "pagibig", "tin",
   "ecName", "ecRelationship", "ecMobile", "ecAddress",
   "education", "school", "course", "yearGrad", "prevWork", "prevDetails"
@@ -279,4 +281,10 @@ app.use((err, _req, res, _next) => {
   res.status(err.status || 500).json({ error: err.message });
 });
 
-app.listen(process.env.PORT || 5000, () => console.log("HRIS API running"));
+module.exports = app;
+
+// Only listen when running locally (node server.js). Vercel imports the app instead.
+if (require.main === module) {
+  const PORT = process.env.PORT || 5000;
+  app.listen(PORT, () => console.log(`HRIS API running on port ${PORT}`));
+}
