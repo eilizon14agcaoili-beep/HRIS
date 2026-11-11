@@ -268,6 +268,125 @@ app.post("/api/requests/email", requireAuth, requireRole("manager"), mailUpload.
   }
 });
 
+/* ---------- GM analytics (201 submissions) ---------- */
+// GM analytics for 201 submissions.
+
+const F = {
+  company:     'company',
+  client:      'client',
+  region:      'region',
+  province:    'province',
+  city:        'cityMunicipality',   // falls back to `city` if empty
+  position:    'position',
+  gender:      'sex',
+  birthdate:   'dob',
+  startDate:   'dateHired',
+  submittedAt: 'createdAt'
+};
+
+const LATE_HOURS = 72;
+const AGE_BANDS = [[18,24,'18-24'],[25,34,'25-34'],[35,44,'35-44'],[45,54,'45-54'],[55,200,'55+']];
+
+const val = (d, k) => {
+  let v = d[F[k]];
+  if ((v === undefined || v === null || v === '') && k === 'city') v = d.city;
+  return v === undefined || v === null || v === '' ? 'Unspecified' : String(v).trim();
+};
+const toDate = v => { const d = new Date(v); return isNaN(d) ? null : d; };
+
+function ageOf(d) {
+  const b = toDate(d[F.birthdate]);
+  if (b) {
+    const ref = toDate(d[F.startDate]) || new Date();
+    let a = ref.getFullYear() - b.getFullYear();
+    const m = ref.getMonth() - b.getMonth();
+    if (m < 0 || (m === 0 && ref.getDate() < b.getDate())) a--;
+    return a;
+  }
+  return null;
+}
+const bandOf = a => (a == null ? 'Unspecified' : (AGE_BANDS.find(([lo, hi]) => a >= lo && a <= hi) || [0,0,'Unspecified'])[2]);
+
+const tally = (arr, fn) => {
+  const m = {};
+  arr.forEach(x => { const k = fn(x); m[k] = (m[k] || 0) + 1; });
+  return Object.entries(m).map(([label, count]) => ({ label, count })).sort((a, b) => b.count - a.count);
+};
+const pad = n => String(n).padStart(2, '0');
+const ymd = d => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+
+// GET /api/analytics/201?year=2026&month=11&company=Prestige
+app.get('/api/analytics/201', requireAuth, requireRole('manager'), async (req, res) => {
+  try {
+    const { year, month, company } = req.query;
+    const q = {};
+    if (company && company !== 'all') q[F.company] = company;
+
+    let docs = await Request201.find(q).lean();
+
+    // attach submitted date + filter by year/month (by submission date)
+    docs = docs.map(d => ({ d, sub: toDate(d[F.submittedAt]), start: toDate(d[F.startDate]) }))
+      .filter(x => x.sub)
+      .filter(x => !year || x.sub.getFullYear() === Number(year))
+      .filter(x => !month || x.sub.getMonth() + 1 === Number(month));
+
+    const rows = docs.map(({ d, sub, start }) => {
+      const lagHrs = start ? (sub - start) / 36e5 : null;
+      return { d, sub, start, lagHrs, late: lagHrs !== null && lagHrs > LATE_HOURS };
+    });
+
+    const measurable = rows.filter(r => r.lagHrs !== null);
+    const late = measurable.filter(r => r.late).length;
+    const onTime = measurable.length - late;
+
+    const perMonth = tally(rows, r => `${r.sub.getFullYear()}-${pad(r.sub.getMonth() + 1)}`)
+      .sort((a, b) => a.label.localeCompare(b.label));
+    const perYear = tally(rows, r => String(r.sub.getFullYear())).sort((a, b) => a.label.localeCompare(b.label));
+    const perPayroll = tally(rows, r =>
+      `${r.sub.getFullYear()}-${pad(r.sub.getMonth() + 1)} ${r.sub.getDate() <= 15 ? '1st (1-15)' : '2nd (16-end)'}`)
+      .sort((a, b) => a.label.localeCompare(b.label));
+
+    // calendar: per submission day -> on-time / late counts
+    const cal = {};
+    measurable.forEach(r => {
+      const k = ymd(r.sub);
+      cal[k] = cal[k] || { date: k, onTime: 0, late: 0 };
+      r.late ? cal[k].late++ : cal[k].onTime++;
+    });
+
+    const lateList = measurable.filter(r => r.late)
+      .sort((a, b) => b.lagHrs - a.lagHrs).slice(0, 15)
+      .map(r => ({
+        company: val(r.d, 'company'), client: val(r.d, 'client'), position: val(r.d, 'position'),
+        start: ymd(r.start), submitted: ymd(r.sub), hoursLate: Math.round(r.lagHrs - LATE_HOURS)
+      }));
+
+    res.json({
+      kpi: {
+        total: rows.length,
+        onTime, late,
+        onTimeRate: measurable.length ? Math.round((onTime / measurable.length) * 1000) / 10 : 0,
+        avgLagHours: measurable.length ? Math.round(measurable.reduce((s, r) => s + r.lagHrs, 0) / measurable.length) : 0,
+        lateHours: LATE_HOURS
+      },
+      perMonth, perYear, perPayroll,
+      perCompany:  tally(rows, r => val(r.d, 'company')),
+      perClient:   tally(rows, r => val(r.d, 'client')).slice(0, 10),
+      perRegion:   tally(rows, r => val(r.d, 'region')),
+      perProvince: tally(rows, r => val(r.d, 'province')).slice(0, 10),
+      perCity:     tally(rows, r => val(r.d, 'city')).slice(0, 10),
+      perPosition: tally(rows, r => val(r.d, 'position')).slice(0, 10),
+      perGender:   tally(rows, r => val(r.d, 'gender')),
+      perAge:      tally(rows, r => bandOf(ageOf(r.d))),
+      calendar: Object.values(cal),
+      lateList
+    });
+  } catch (err) {
+    console.error('analytics/201', err);
+    res.status(500).json({ error: 'Failed to build analytics' });
+  }
+});
+
 // Error handler (keep this after all routes): clear messages for big files and bad requests
 app.use((err, _req, res, _next) => {
   if (err instanceof multer.MulterError) {
